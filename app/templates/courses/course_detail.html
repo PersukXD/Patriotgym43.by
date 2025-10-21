@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-5" style="min-height: 100vh;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="card border-0 shadow-lg animate__animated animate__fadeInUp" style="border-radius: 25px; overflow: hidden;">
+                    {% if course.image_url %}
+                    <div class="card-img-top-container position-relative">
+                        <img src="{{ course.image_url }}" class="card-img-top" alt="{{ course.title }}"
+                             style="height: 400px; object-fit: cover; width: 100%;">
+                        <div class="card-img-overlay d-flex align-items-end">
+                            <div class="text-white p-4 w-100" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                                <h1 class="display-5 fw-bold mb-2">{{ course.title }}</h1>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <span class="badge bg-primary px-3 py-2 fs-6 shadow-sm">
+                                        <i class="bi bi-calendar-range me-2"></i>{{ course.date_range }}
+                                    </span>
+                                    {% if course.is_completed %}
+                                    <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">🔴 Мероприятие завершено</span>
+                                    {% else %}
+                                    <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">✅ Активное мероприятие</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="card-header text-center py-4" style="border-radius: 25px 25px 0 0;">
+                        <h1 class="display-5 fw-bold mb-2">{{ course.title }}</h1>
+                        <div class="d-flex justify-content-center flex-wrap gap-3">
+                            <span class="badge bg-light px-3 py-2 fs-6 shadow-sm">
+                                <i class="bi bi-calendar-range me-2"></i>{{ course.date_range }}
+                            </span>
+                            {% if course.is_completed %}
+                            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">🔴 Мероприятие завершено</span>
+                            {% else %}
+                            <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">🟢 Активное мероприятие</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body p-5">
+                        {% if course.description %}
+                        <div class="mb-5 animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                            <h3 class="mb-4 d-flex align-items-center">
+                                <i class="bi bi-journal-text me-3"></i>📋 Описание мероприятия
+                            </h3>
+                            <div class="card p-4 shadow-sm" style="border-radius: 15px;">
+                                <div class="card-text" style="white-space: pre-line; line-height: 1.8; font-size: 1.1rem;">
+                                    {{ course.description }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if course.additional_info %}
+                        <div class="mb-5 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                            <h3 class="mb-4 d-flex align-items-center">
+                                <i class="bi bi-info-circle me-3"></i>📊 Дополнительная информация
+                            </h3>
+                            <div class="card p-4 shadow-sm" style="border-radius: 15px; border-width: 2px;">
+                                <div style="white-space: pre-line; line-height: 1.8; font-size: 1.1rem;">
+                                    {{ course.additional_info }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if course.organizers %}
+                        <div class="mb-5 animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                            <h3 class="mb-4 d-flex align-items-center">
+                                <i class="bi bi-building me-3"></i>🏢 Организаторы
+                            </h3>
+                            <div class="card p-4 shadow-sm" style="border-radius: 15px; border-width: 2px;">
+                                <div style="white-space: pre-line; line-height: 1.8; font-size: 1.1rem;">
+                                    {{ course.organizers }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-5 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                            <div class="d-grid gap-3 d-md-flex justify-content-center">
+                                <a href="{% url 'courses_list' %}"
+                                   class="btn btn-outline-primary btn-lg px-5 py-3"
+                                   style="border-radius: 15px;">
+                                    <i class="bi bi-arrow-left me-2"></i>Назад к списку
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-6 mb-4 animate__animated animate__fadeInLeft">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-clock-history display-4 text-primary mb-3"></i>
+                        <h5>Дата добавления</h5>
+                        <p class="text-muted mb-0">{{ course.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4 animate__animated animate__fadeInRight">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-{% if course.is_completed %}check-circle{% else %}play-circle{% endif %} display-4 {% if course.is_completed %}text-danger{% else %}text-success{% endif %} mb-3"></i>
+                        <h5>Статус мероприятия</h5>
+                        <p class="{% if course.is_completed %}text-danger{% else %}text-success{% endif %} mb-0 fw-bold">
+                            {% if course.is_completed %}Завершено{% else %}Активно{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+    background: var(--card-bg);
+    color: var(--card-text);
+    border: 1px solid var(--border-color);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--btn-primary-bg), var(--btn-primary-hover));
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3);
+    background: linear-gradient(135deg, var(--btn-primary-hover), #084298);
+}
+
+.btn-outline-primary {
+    border-radius: 15px;
+    font-weight: 600;
+    border-width: 2px;
+    transition: all 0.3s ease;
+    border: 2px solid var(--btn-primary-bg);
+    color: var(--btn-primary-bg);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, var(--btn-primary-bg), var(--btn-primary-hover));
+    color: white;
+    border-color: var(--btn-primary-bg);
+    box-shadow: 0 8px 20px rgba(13, 110, 253, 0.2);
+}
+
+.badge {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.card-img-top-container {
+    overflow: hidden;
+}
+
+.card-img-top-container img {
+    transition: transform 0.3s ease;
+}
+
+.card-img-top-container:hover img {
+    transform: scale(1.05);
+}
+
+.bg-primary {
+    background: linear-gradient(135deg, var(--btn-primary-bg), var(--btn-primary-hover)) !important;
+    border: none;
+}
+
+.text-primary {
+    color: var(--btn-primary-bg) !important;
+}
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const elements = document.querySelectorAll('.animate__animated');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const animation = entry.target.getAttribute('data-animation') || 'animate__fadeInUp';
+                entry.target.classList.add(animation);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    elements.forEach(element => {
+        observer.observe(element);
+    });
+
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.style.transition = 'all 0.3s ease';
+    });
+});
+</script>
+{% endblock %}

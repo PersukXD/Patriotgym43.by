@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card auth-card shadow">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus display-4 text-primary mb-3"></i>
+                        <h2 class="card-title auth-title">Регистрация</h2>
+                    </div>
+
+                    <!-- Показываем только сообщения об ошибках -->
+                    {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                            {% if message.tags == 'error' or 'ошибк' in message.message|lower or 'исправьте' in message.message|lower %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label for="id_username" class="form-label auth-label">Имя пользователя</label>
+                            <div class="input-group">
+                                <span class="input-group-text auth-input-icon">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text" name="username" class="form-control auth-input" id="id_username"
+                                       placeholder="Введите имя пользователя" required>
+                            </div>
+                            {% if form.username.errors %}
+                            <div class="text-danger mt-2">
+                                {% for error in form.username.errors %}
+                                <small><i class="bi bi-x-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_password1" class="form-label auth-label">Пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text auth-input-icon">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <input type="password" name="password1" class="form-control auth-input" id="id_password1"
+                                       placeholder="Введите пароль" required>
+                            </div>
+                            {% if form.password1.errors %}
+                            <div class="text-danger mt-2">
+                                {% for error in form.password1.errors %}
+                                <small><i class="bi bi-x-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_password2" class="form-label auth-label">Повторите пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text auth-input-icon">
+                                    <i class="bi bi-lock-fill"></i>
+                                </span>
+                                <input type="password" name="password2" class="form-control auth-input" id="id_password2"
+                                       placeholder="Повторите пароль" required>
+                            </div>
+                            {% if form.password2.errors %}
+                            <div class="text-danger mt-2">
+                                {% for error in form.password2.errors %}
+                                <small><i class="bi bi-x-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 auth-submit-btn py-3">
+                            <i class="bi bi-person-check me-2"></i>Зарегистрироваться
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4 pt-3 border-top auth-divider">
+                        <p class="mb-0 auth-switch-text">
+                            <span class="text-muted">Зарегистрированы?</span>
+                            <a href="{% url 'login' %}" class="auth-switch-link">Войдите в аккаунт</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        border: none;
+        border-radius: 20px;
+        background: var(--card-bg);
+        color: var(--text-primary);
+        transition: all 0.5s ease;
+    }
+
+    .auth-title {
+        color: var(--text-primary);
+        font-weight: 700;
+        font-size: 1.75rem;
+    }
+
+    .auth-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .auth-input {
+        border-radius: 12px;
+        padding: 14px 16px;
+        border: 2px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .auth-input:focus {
+        border-color: var(--btn-primary-bg);
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+
+    .auth-input::placeholder {
+        color: var(--text-secondary);
+    }
+
+    .auth-input-icon {
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-right: none;
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+    }
+
+    .auth-input:focus + .auth-input-icon,
+    .auth-input:focus ~ .auth-input-icon {
+        border-color: var(--btn-primary-bg);
+        background: var(--btn-primary-bg);
+        color: white;
+    }
+
+    .auth-submit-btn {
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--btn-primary-bg) 0%, var(--btn-primary-hover) 100%);
+        border: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+
+    .auth-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+    }
+
+    .auth-switch-text {
+        font-size: 1rem;
+    }
+
+    .auth-switch-link {
+        color: var(--btn-primary-bg);
+        font-weight: 600;
+        text-decoration: none;
+        margin-left: 0.5rem;
+        transition: color 0.3s ease;
+    }
+
+    .auth-switch-link:hover {
+        color: var(--btn-primary-hover);
+        text-decoration: underline;
+    }
+
+    .auth-divider {
+        border-top-color: var(--border-color) !important;
+    }
+
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        border-radius: 12px;
+    }
+
+    .shadow {
+        box-shadow: var(--shadow-medium) !important;
+    }
+
+    .text-primary {
+        color: var(--btn-primary-bg) !important;
+    }
+
+    .text-muted {
+        color: var(--text-secondary) !important;
+    }
+</style>
+{% endblock %}

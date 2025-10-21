@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Патриот{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --bg-card: #ffffff;
+      --text-primary: #2c3e50;
+      --text-secondary: #6c757d;
+      --border-color: #e9ecef;
+      --shadow-light: 0 2px 15px rgba(0, 0, 0, 0.1);
+      --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.15);
+      --header-bg: #ffffff;
+      --header-text: #2c3e50;
+      --footer-bg: #343a40;
+      --footer-text: #ffffff;
+      --nav-link-color: #2c3e50;
+      --nav-link-hover: #3498db;
+      --btn-outline-color: #2c3e50;
+      --btn-primary-bg: #3498db;
+      --btn-primary-hover: #2980b9;
+      --modal-bg: #ffffff;
+      --modal-text: #212529;
+      --search-bg: #ffffff;
+      --search-text: #000000;
+      --search-border: #e9ecef;
+      --search-placeholder: #6c757d;
+      --card-bg: #ffffff;
+      --card-text: #2c3e50;
+      --section-divider-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border-color: #334155;
+      --shadow-light: 0 2px 15px rgba(0, 0, 0, 0.3);
+      --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.4);
+      --header-bg: #1e293b;
+      --header-text: #f1f5f9;
+      --footer-bg: #0f172a;
+      --footer-text: #f1f5f9;
+      --nav-link-color: #f1f5f9;
+      --nav-link-hover: #60a5fa;
+      --btn-outline-color: #f1f5f9;
+      --btn-primary-bg: #3b82f6;
+      --btn-primary-hover: #2563eb;
+      --modal-bg: #1e293b;
+      --modal-text: #f1f5f9;
+      --search-bg: #334155;
+      --search-text: #f1f5f9;
+      --search-border: #475569;
+      --search-placeholder: #94a3b8;
+      --card-bg: #1e293b;
+      --card-text: #f1f5f9;
+      --section-divider-bg: #0f172a;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: all 0.5s ease;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .theme-toggle-corner {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-light);
+      transition: all 0.4s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .theme-toggle-corner:hover {
+      transform: scale(1.1) rotate(15deg);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .theme-toggle-corner.rotating i {
+      animation: rotateTheme 0.6s ease;
+    }
+
+    @keyframes rotateTheme {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .theme-toggle-corner i {
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      transition: all 0.4s ease;
+    }
+
+    #preloader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: background-color 0.5s ease;
+    }
+
+    .loader {
+      width: 60px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 10px solid;
+      border-color: var(--btn-primary-bg) #0000;
+      animation: l1 1s infinite;
+      transition: border-color 0.5s ease;
+    }
+
+    @keyframes l1 {to{transform: rotate(.5turn)}}
+
+    #content {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content-loaded {
+      opacity: 1 !important;
+    }
+
+    .main-content {
+      flex: 1;
+      padding-top: 80px;
+      background-color: var(--bg-primary);
+      transition: background-color 0.5s ease;
+    }
+
+    .footer {
+      background-color: var(--footer-bg);
+      color: var(--footer-text);
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: auto;
+      transition: all 0.5s ease;
+    }
+
+    header {
+      background-color: var(--header-bg) !important;
+      box-shadow: var(--shadow-light);
+      transition: all 0.5s ease;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+    }
+
+    .header-scrolled {
+      box-shadow: var(--shadow-medium);
+    }
+
+    .header-container {
+      padding: 0.75rem 0;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+    }
+
+    .logo-image {
+      height: 50px;
+      width: auto;
+      transition: transform 0.3s ease;
+    }
+
+    .logo-image:hover {
+      transform: scale(1.05);
+    }
+
+    .nav-link {
+      color: var(--nav-link-color) !important;
+      font-weight: 500;
+      padding: 0.5rem 1rem !important;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .nav-link:hover {
+      color: var(--nav-link-hover) !important;
+      background-color: rgba(52, 152, 219, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background-color: var(--nav-link-hover);
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+    }
+
+    .nav-link:hover::after {
+      width: 80%;
+    }
+
+    .btn-outline-light {
+      color: var(--btn-outline-color) !important;
+      border-color: var(--btn-outline-color) !important;
+      transition: all 0.3s ease;
+    }
+
+    .btn-outline-light:hover {
+      background-color: var(--btn-outline-color) !important;
+      color: var(--header-bg) !important;
+    }
+
+    .btn-warning {
+      background-color: var(--btn-primary-bg) !important;
+      border-color: var(--btn-primary-bg) !important;
+      color: white !important;
+      transition: all 0.3s ease;
+    }
+
+    .btn-warning:hover {
+      background-color: var(--btn-primary-hover) !important;
+      border-color: var(--btn-primary-hover) !important;
+      transform: translateY(-2px);
+    }
+
+    .search-form {
+      position: relative;
+      min-width: 400px;
+      flex-grow: 1;
+      max-width: 600px;
+      margin: 0 2rem;
+    }
+
+    .search-input-group {
+      width: 100%;
+    }
+
+    .search-input {
+      background-color: var(--search-bg) !important;
+      color: var(--search-text) !important;
+      border: 2px solid var(--search-border);
+      border-radius: 25px 0 0 25px !important;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .search-input::placeholder {
+      color: var(--search-placeholder) !important;
+    }
+
+    .search-input:focus {
+      background-color: var(--search-bg) !important;
+      color: var(--search-text) !important;
+      border-color: var(--nav-link-hover);
+      box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .search-btn {
+      border-radius: 0 25px 25px 0 !important;
+      border: 2px solid var(--search-border);
+      border-left: none;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+
+    .search-btn:hover {
+      background-color: var(--nav-link-hover);
+      border-color: var(--nav-link-hover);
+      color: white;
+    }
+
+    .search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 2px solid var(--nav-link-hover);
+      border-radius: 0 0 15px 15px;
+      box-shadow: var(--shadow-medium);
+      z-index: 1000;
+      max-height: 400px;
+      overflow-y: auto;
+      display: none;
+      margin-top: 5px;
+    }
+
+    .search-result-item {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: background-color 0.2s;
+      color: var(--text-primary) !important;
+    }
+
+    .search-result-item:hover {
+      background-color: var(--bg-secondary);
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary) !important;
+      font-size: 1rem;
+    }
+
+    .search-result-date {
+      font-size: 0.875rem;
+      color: var(--text-secondary) !important;
+    }
+
+    .search-result-type {
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      color: var(--text-secondary) !important;
+    }
+
+    .no-results {
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--text-secondary) !important;
+      font-size: 1rem;
+    }
+
+    .header-container .d-flex {
+      align-items: center !important;
+    }
+
+    .header-buttons {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .logout-modal .modal-content {
+      border-radius: 15px;
+      box-shadow: var(--shadow-medium);
+      border: none;
+      overflow: hidden;
+      background: var(--modal-bg);
+      color: var(--modal-text);
+      transition: all 0.5s ease;
+    }
+
+    .logout-modal .modal-header {
+      border-bottom: 1px solid var(--border-color);
+      background: linear-gradient(135deg, var(--btn-primary-bg) 0%, var(--btn-primary-hover) 100%);
+      color: white;
+      border-radius: 15px 15px 0 0;
+      position: relative;
+      padding: 1.5rem 2rem;
+    }
+
+    .logout-modal .modal-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+      transform: rotate(45deg);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+
+    .logout-modal .modal-body {
+      padding: 2rem;
+      text-align: center;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    }
+
+    .logout-modal .modal-footer {
+      border-top: 1px solid var(--border-color);
+      justify-content: center;
+      padding: 1.5rem 2rem;
+      background: var(--modal-bg);
+    }
+
+    @media (max-width: 768px) {
+      .theme-toggle-corner {
+        top: 15px;
+        right: 15px;
+        width: 45px;
+        height: 45px;
+      }
+
+      .theme-toggle-corner i {
+        font-size: 1.2rem;
+      }
+
+      .search-form {
+        order: 3;
+        min-width: 100%;
+        max-width: 100%;
+        margin: 1rem 0 0 0;
+      }
+
+      .header-container .d-flex {
+        flex-wrap: wrap !important;
+      }
+
+      .header-buttons {
+        order: 2;
+        margin-left: auto;
+      }
+
+      .nav {
+        order: 1;
+        margin-bottom: 1rem;
+      }
+
+      .search-input {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .search-btn {
+        padding: 0.5rem 1rem;
+      }
+
+      .header-container {
+        padding: 0.5rem 0;
+      }
+
+      header {
+        min-height: auto;
+      }
+
+      .logo-image {
+        height: 40px;
+      }
+
+      .logout-modal .modal-header {
+        padding: 1rem 1.5rem;
+      }
+
+      .logout-modal .modal-body {
+        padding: 1.5rem;
+      }
+
+      .logout-modal .modal-footer {
+        padding: 1rem 1.5rem;
+      }
+    }
+
+    @media (min-width: 992px) {
+      .header-container .d-flex {
+        flex-wrap: nowrap !important;
+      }
+
+      .search-form {
+        flex: 1;
+        margin: 0 2rem;
+      }
+    }
+
+    a, button, .btn, .card, .nav-link {
+      transition: all 0.3s ease;
+    }
+
+    .nav-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <!-- Preloader -->
+  <div id="preloader">
+      <div class="loader"></div>
+  </div>
+
+  <!-- Кнопка переключения темы -->
+  <div class="theme-toggle-corner" id="themeToggleCorner" title="Переключить тему">
+    <i class="bi bi-moon-fill"></i>
+  </div>
+
+  <!-- Main Content -->
+  <div id="content">
+    <header class="p-3">
+        <div class="container header-container">
+          <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+            <a href="{% url 'home' %}" class="logo-container me-3">
+               {% load static %}
+              <img src="{% static 'Imagese/Без имени-1.png' %}" alt="Патриот" class="logo-image" id="themeLogo">
+            </a>
+
+            <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+              <li><a href="{% url 'home' %}" class="nav-link px-2">Главная</a></li>
+              <li><a href="{% url 'news_list' %}" class="nav-link px-2">Новости</a></li>
+              <li><a href="{% url 'feed' %}" class="nav-link px-2">Лента</a></li>
+              <li><a href="{% url 'historical_map' %}" class="nav-link px-2">Карта</a></li>
+              <li><a href="{% url 'courses_list' %}" class="nav-link px-2">Мероприятия</a></li>
+              <li><a href="/shop/" class="nav-link px-2">Магазин</a></li>
+            </ul>
+
+            <form class="search-form" action="{% url 'search_news' %}" method="get" id="searchForm">
+              <div class="input-group search-input-group">
+                <input type="search" name="q" class="form-control search-input" placeholder="Поиск новостей и мероприятий..."
+                       aria-label="Search" id="searchInput" value="{{ request.GET.q }}" autocomplete="off">
+                <button type="submit" class="btn btn-outline-secondary search-btn">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+              <div class="search-results" id="searchResults"></div>
+            </form>
+
+            <div class="text-end header-buttons">
+              {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}" class="btn btn-outline-light me-2">
+                  <i class="bi bi-person-circle"></i> Профиль
+                </a>
+                <button type="button" class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                  Выйти
+                </button>
+              {% else %}
+                <div class="d-flex align-items-center">
+                  <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Войти</a>
+                  <a href="{% url 'register' %}" class="btn btn-warning">Зарегистрироваться</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        {% block content %}
+        {% endblock %}
+      </main>
+
+      <footer class="footer">
+        <div class="container">
+          <p>&copy; 2024 Патриот. Все права защищены.</p>
+        </div>
+      </footer>
+
+      <!-- Модальное окно выхода -->
+      <div class="modal fade logout-modal" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="logoutModalLabel">
+                <i class="bi bi-question-circle me-2"></i>Подтверждение выхода
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <i class="bi bi-person-check" style="font-size: 3rem;"></i>
+              </div>
+              <p class="mb-0">Вы действительно хотите выйти из аккаунта <strong>{{ user.username }}</strong>?</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="bi bi-x-circle me-2"></i>Нет, остаться
+              </button>
+              <form method="post" action="{% url 'logout' %}" id="logoutForm">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-circle me-2"></i>Да, выйти
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <script>
+    class ThemeManager {
+        constructor() {
+            this.currentTheme = localStorage.getItem('theme') || 'light';
+            this.lightLogo = "{% static 'Imagese/Без имени-1.png' %}";
+            this.darkLogo = "{% static 'Imagese/Без имени-2.png' %}";
+            this.init();
+        }
+
+        init() {
+            this.applyTheme(this.currentTheme);
+            this.updateToggleButton();
+            this.updateLogo();
+        }
+
+        applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            this.currentTheme = theme;
+            this.updateToggleButton();
+            this.updateLogo();
+        }
+
+        toggleTheme() {
+            const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+            this.applyTheme(newTheme);
+
+            const toggleBtn = document.getElementById('themeToggleCorner');
+            toggleBtn.classList.add('rotating');
+            setTimeout(() => {
+                toggleBtn.classList.remove('rotating');
+            }, 600);
+        }
+
+        updateToggleButton() {
+            const toggleBtn = document.getElementById('themeToggleCorner');
+            const icon = toggleBtn.querySelector('i');
+
+            if (this.currentTheme === 'dark') {
+                icon.className = 'bi bi-sun-fill';
+                toggleBtn.title = 'Переключить на светлую тему';
+            } else {
+                icon.className = 'bi bi-moon-fill';
+                toggleBtn.title = 'Переключить на темную тему';
+            }
+        }
+
+        updateLogo() {
+            const logoElement = document.getElementById('themeLogo');
+            if (logoElement) {
+                if (this.currentTheme === 'dark') {
+                    logoElement.src = this.darkLogo;
+                } else {
+                    logoElement.src = this.lightLogo;
+                }
+            }
+        }
+    }
+
+    const themeManager = new ThemeManager();
+
+    document.getElementById('themeToggleCorner').addEventListener('click', function() {
+        themeManager.toggleTheme();
+    });
+
+    // Функция для исправления раскладки клавиатуры
+    function fixKeyboardLayout(text) {
+        const layoutMap = {
+            'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з',
+            '[': 'х', ']': 'ъ', 'a': 'ф', 's': 'ы', 'd': 'в', 'f': 'а', 'g': 'п', 'h': 'р', 'j': 'о', 'k': 'л',
+            'l': 'д', ';': 'ж', "'": 'э', 'z': 'я', 'x': 'ч', 'c': 'с', 'v': 'м', 'b': 'и', 'n': 'т', 'm': 'ь',
+            ',': 'б', '.': 'ю', '/': '.', '`': 'ё',
+
+            'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y', 'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p',
+            'х': '[', 'ъ': ']', 'ф': 'a', 'ы': 's', 'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k',
+            'д': 'l', 'ж': ';', 'э': "'", 'я': 'z', 'ч': 'x', 'с': 'c', 'м': 'v', 'и': 'b', 'т': 'n', 'ь': 'm',
+            'б': ',', 'ю': '.', 'ё': '`'
+        };
+
+        let result = '';
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i].toLowerCase();
+            result += layoutMap[char] || text[i];
+        }
+        return result;
+    }
+
+    // Функция для определения раскладки текста
+    function detectAndFixLayout(text) {
+        // Проверяем, содержит ли текст английские символы, которые могут быть русскими в другой раскладке
+        const englishPattern = /[qwertyuiop\[\]asdfghjkl;'zxcvbnm,\.`]/i;
+        const russianPattern = /[йцукенгшщзхъфывапролджэячсмитьбюё]/i;
+
+        // Если текст содержит английские символы и нет русских, вероятно это неправильная раскладка
+        if (englishPattern.test(text) && !russianPattern.test(text)) {
+            return fixKeyboardLayout(text);
+        }
+
+        return text;
+    }
+
+    // Функция для нормализации текста (приведение к нижнему регистру и исправление раскладки)
+    function normalizeSearchQuery(text) {
+        // Сначала исправляем раскладку
+        const fixedLayout = detectAndFixLayout(text);
+        // Затем приводим к нижнему регистру для регистронезависимого поиска
+        return fixedLayout.toLowerCase();
+    }
+
+    (function() {
+        'use strict';
+        const preloader = document.getElementById('preloader');
+        const content = document.getElementById('content');
+
+        function hidePreloader() {
+            content.classList.add('content-loaded');
+            preloader.style.transition = 'opacity 0.3s ease';
+            preloader.style.opacity = '0';
+            setTimeout(() => {
+                if (preloader.parentNode) {
+                    preloader.parentNode.removeChild(preloader);
+                }
+            }, 300);
+        }
+
+        if (document.readyState === 'complete') {
+            setTimeout(hidePreloader, 600);
+        } else {
+            window.addEventListener('load', function() {
+                setTimeout(hidePreloader, 600);
+            });
+        }
+
+        setTimeout(hidePreloader, 3000);
+    })();
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const header = document.querySelector('header');
+
+        function handleScroll() {
+            if (window.scrollY > 10) {
+                header.classList.add('header-scrolled');
+            } else {
+                header.classList.remove('header-scrolled');
+            }
+        }
+
+        window.addEventListener('scroll', handleScroll);
+        handleScroll();
+
+        const logoutForm = document.getElementById('logoutForm');
+        const logoutModal = document.getElementById('logoutModal');
+
+        if (logoutForm && logoutModal) {
+            logoutForm.addEventListener('submit', function(e) {
+                const modal = bootstrap.Modal.getInstance(logoutModal);
+                if (modal) {
+                    modal.hide();
+                }
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Выход...';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
+
+        if (logoutModal) {
+            logoutModal.addEventListener('hidden.bs.modal', function () {
+                const submitBtn = document.querySelector('#logoutForm button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Да, выйти';
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        let searchTimeout;
+
+        if (searchInput && searchResults) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+
+                if (query.length < 2) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    performSearch(query);
+                }, 300);
+            });
+
+            searchInput.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query.length >= 2 && searchResults.innerHTML) {
+                    searchResults.style.display = 'block';
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-form')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+
+            searchResults.addEventListener('click', function(e) {
+                const resultItem = e.target.closest('.search-result-item');
+                if (resultItem) {
+                    const searchForm = document.getElementById('searchForm');
+                    searchInput.value = resultItem.querySelector('.search-result-title').textContent;
+                    searchForm.submit();
+                }
+            });
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    searchResults.style.display = 'none';
+                }
+            });
+
+            // Обработка отправки формы поиска с исправлением раскладки
+            const searchForm = document.getElementById('searchForm');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    const query = searchInput.value.trim();
+                    if (query) {
+                        const fixedQuery = detectAndFixLayout(query);
+                        if (fixedQuery !== query) {
+                            searchInput.value = fixedQuery;
+                            // Не прерываем отправку формы, просто исправляем запрос
+                        }
+                    }
+                });
+            }
+        }
+
+        function performSearch(query) {
+            // Нормализуем запрос (исправляем раскладку и приводим к нижнему регистру)
+            const normalizedQuery = normalizeSearchQuery(query);
+
+            // Отправляем нормализованный запрос на сервер
+            fetch(`/search/?q=${encodeURIComponent(normalizedQuery)}&ajax=1`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displaySearchResults(data.results, query);
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    searchResults.innerHTML = '<div class="no-results">Ошибка поиска</div>';
+                    searchResults.style.display = 'block';
+                });
+        }
+
+        function displaySearchResults(results, query) {
+            if (!searchResults) return;
+
+            searchResults.innerHTML = '';
+
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="no-results">Ничего не найдено по запросу "' + query + '"</div>';
+            } else {
+                results.forEach(result => {
+                    const resultElement = document.createElement('div');
+                    resultElement.className = 'search-result-item';
+
+                    const icon = result.type === 'news' ?
+                        '<i class="bi bi-newspaper text-primary me-2"></i>' :
+                        '<i class="bi bi-calendar-event text-success me-2"></i>';
+
+                    resultElement.innerHTML = `
+                        <div class="search-result-title">${icon}${result.title}</div>
+                        <div class="search-result-date">${result.date}</div>
+                        <div class="search-result-type">${result.type === 'news' ? 'Новость' : 'Мероприятие'}</div>
+                    `;
+
+                    resultElement.addEventListener('click', function() {
+                        window.location.href = result.url;
+                    });
+
+                    searchResults.appendChild(resultElement);
+                });
+            }
+
+            searchResults.style.display = 'block';
+        }
+    });
+
+    function updateAllLinksWithCacheBuster() {
+        const currentUrl = new URL(window.location.href);
+        const currentCacheBuster = currentUrl.searchParams.get('cache_buster');
+
+        if (currentCacheBuster) {
+            const links = document.querySelectorAll('a[href]:not([href^="http"]):not([href^="#"]):not([href*="mailto:]):not([href*="tel:"])');
+            links.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && !href.includes('cache_buster')) {
+                    const url = new URL(href, window.location.origin);
+                    url.searchParams.set('cache_buster', currentCacheBuster);
+                    link.setAttribute('href', url.pathname + url.search);
+                }
+            });
+
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                const action = form.getAttribute('action') || '';
+                if (action && !action.includes('cache_buster')) {
+                    const url = new URL(action, window.location.origin);
+                    url.searchParams.set('cache_buster', currentCacheBuster);
+                    form.setAttribute('action', url.pathname + url.search);
+                }
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateAllLinksWithCacheBuster();
+
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+                const href = link.getAttribute('href');
+                if (href && !href.startsWith('http') && !href.includes('cache_buster') && !href.startsWith('#')) {
+                    e.preventDefault();
+                    const separator = href.includes('?') ? '&' : '?';
+                    const currentCacheBuster = new URL(window.location.href).searchParams.get('cache_buster') || Date.now();
+                    window.location.href = href + separator + 'cache_buster=' + currentCacheBuster;
+                }
+            }
+        });
+    });
+  </script>
+</body>
+</html>

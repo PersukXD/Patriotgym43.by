@@ -1,0 +1,533 @@
+<!-- templates/shop/inventory_modal.html -->
+<div class="inventory-content">
+    {% if categories %}
+        {% for category, items in categories.items %}
+        <div class="mb-4">
+            <h6 class="fw-bold mb-3" style="color: #2563eb; font-size: 1.2rem;">
+                {{ items.0.get_category_display }}
+            </h6>
+            <div class="row g-3">
+                {% for inv_item in items %}
+                <div class="col-12">
+                    <div class="inventory-item d-flex align-items-center justify-content-between {% if inv_item.is_equipped %}border-primary equipped-item{% endif %}"
+                         style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 15px; margin-bottom: 10px; border: 1px solid {% if inv_item.is_equipped %}#2563eb{% else %}rgba(255, 255, 255, 0.2){% endif %}; transition: all 0.3s ease;">
+
+                        <div class="d-flex align-items-center">
+                            <!-- Исправленное отображение картинки -->
+                            {% if inv_item.item.image %}
+                                <img src="{{ inv_item.item.image.url }}?v={{ cache_buster }}"
+                                     class="inventory-item-image"
+                                     alt="{{ inv_item.item.name }}"
+                                     style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px; margin-right: 15px; background: rgba(255,255,255,0.1); padding: 5px;">
+                            {% elif inv_item.item.get_image_url %}
+                                <img src="{{ inv_item.item.get_image_url }}?v={{ cache_buster }}"
+                                     class="inventory-item-image"
+                                     alt="{{ inv_item.item.name }}"
+                                     style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px; margin-right: 15px; background: rgba(255,255,255,0.1); padding: 5px;">
+                            {% else %}
+                                <div class="inventory-item-image" style="width: 60px; height: 60px; background: linear-gradient(135deg, #2563eb, #1e40af); border-radius: 8px; margin-right: 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                                    🖼️
+                                </div>
+                            {% endif %}
+
+                            <div class="inventory-item-info">
+                                <div class="inventory-item-name fw-bold" style="font-size: 1.1rem; color: white;">
+                                    {{ inv_item.item.name }}
+                                    {% if inv_item.is_equipped %}
+                                    <span class="badge bg-success ms-2" style="font-size: 0.7rem;">АКТИВНО</span>
+                                    {% endif %}
+                                </div>
+                                <div class="inventory-item-category text-muted" style="font-size: 0.9rem;">
+                                    {{ inv_item.item.get_category_display }}
+                                </div>
+                                <span class="inventory-item-rarity rarity-{{ inv_item.item.rarity }}"
+                                      style="font-size: 0.85rem; font-weight: bold;">
+                                    {{ inv_item.item.get_rarity_display }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="inventory-item-actions">
+                            {% if inv_item.is_equipped %}
+                                <button class="btn unequip-btn"
+                                        data-item-id="{{ inv_item.item.id }}"
+                                        data-item-category="{{ inv_item.item.category }}"
+                                        onclick="unequipItem('{{ inv_item.item.id }}', '{{ inv_item.item.category }}')"
+                                        style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-size: 0.9rem; transition: all 0.3s ease;">
+                                    <i class="bi bi-x-circle me-1"></i>Снять
+                                </button>
+                            {% else %}
+                                <button class="btn equip-btn"
+                                        data-item-id="{{ inv_item.item.id }}"
+                                        data-item-category="{{ inv_item.item.category }}"
+                                        onclick="equipItem('{{ inv_item.item.id }}', '{{ inv_item.item.category }}')"
+                                        style="background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-size: 0.9rem; transition: all 0.3s ease;">
+                                    <i class="bi bi-check-circle me-1"></i>Надеть
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-inventory text-center py-5">
+            <i class="bi bi-bag-x" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+            <h5 style="color: white; margin-bottom: 1rem;">Инвентарь пуст</h5>
+            <p style="color: #b0b0b0; margin-bottom: 2rem;">Приобретите товары в магазине, чтобы они появились здесь</p>
+            <button class="btn btn-primary mt-2" onclick="window.location.href='{% url 'shop' %}'"
+                    style="background: linear-gradient(135deg, #2563eb, #1e40af); border: none; padding: 10px 20px; border-radius: 8px; transition: all 0.3s ease;">
+                <i class="bi bi-cart3 me-1"></i>Перейти в магазин
+            </button>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.rarity-common {
+    color: #ffffff;
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.4);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.rarity-rare {
+    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow:
+        0 2px 8px rgba(59, 130, 246, 0.4),
+        0 0 10px rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.rarity-rare::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+
+.rarity-epic {
+    color: #ffffff;
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa, #8b5cf6);
+    background-size: 200% 200%;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow:
+        0 2px 12px rgba(139, 92, 246, 0.5),
+        0 0 15px rgba(139, 92, 246, 0.3);
+    border: 1px solid rgba(255,255,255,0.4);
+    position: relative;
+    overflow: hidden;
+    animation: gradientShift 3s ease infinite, glowPulse 2s ease-in-out infinite;
+}
+
+.rarity-epic::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(45deg);
+    animation: shine 2s infinite;
+}
+
+.rarity-legendary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+    background-size: 200% 200%;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 800;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    box-shadow:
+        0 2px 15px rgba(245, 158, 11, 0.6),
+        0 0 20px rgba(245, 158, 11, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+    position: relative;
+    overflow: hidden;
+    animation: gradientShift 2s ease infinite, legendaryGlow 1.5s ease-in-out infinite;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rarity-legendary::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    animation: shineFast 1.5s infinite;
+}
+
+/* Анимации */
+@keyframes shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+@keyframes shineFast {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow:
+            0 2px 12px rgba(139, 92, 246, 0.5),
+            0 0 15px rgba(139, 92, 246, 0.3);
+    }
+    50% {
+        box-shadow:
+            0 2px 18px rgba(139, 92, 246, 0.7),
+            0 0 25px rgba(139, 92, 246, 0.5);
+    }
+}
+
+@keyframes legendaryGlow {
+    0%, 100% {
+        box-shadow:
+            0 2px 15px rgba(245, 158, 11, 0.6),
+            0 0 20px rgba(245, 158, 11, 0.4),
+            inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    50% {
+        box-shadow:
+            0 2px 20px rgba(245, 158, 11, 0.8),
+            0 0 30px rgba(245, 158, 11, 0.6),
+            inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+}
+
+/* Общие стили для всех редкостей */
+.inventory-item-rarity {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.inventory-item:hover .inventory-item-rarity {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.inventory-item:hover .rarity-common {
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.5);
+}
+
+.inventory-item:hover .rarity-rare {
+    box-shadow:
+        0 4px 15px rgba(59, 130, 246, 0.5),
+        0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+.inventory-item:hover .rarity-epic {
+    box-shadow:
+        0 4px 18px rgba(139, 92, 246, 0.6),
+        0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.inventory-item:hover .rarity-legendary {
+    box-shadow:
+        0 4px 20px rgba(245, 158, 11, 0.7),
+        0 0 25px rgba(245, 158, 11, 0.5);
+}
+
+/* Остальные стили */
+.inventory-item:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+}
+
+.equip-btn:hover {
+    background: linear-gradient(135deg, #34ce57, #229954) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.4);
+}
+
+.unequip-btn:hover {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(220, 53, 69, 0.4);
+}
+
+.equipped-item {
+    background: rgba(37, 99, 235, 0.15) !important;
+    border: 1px solid #2563eb !important;
+}
+
+.inventory-item:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+}
+
+.equip-btn:hover {
+    background: linear-gradient(135deg, #34ce57, #229954) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.4);
+}
+
+.unequip-btn:hover {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(220, 53, 69, 0.4);
+}
+
+.equipped-item {
+    background: rgba(37, 99, 235, 0.15) !important;
+    border: 1px solid #2563eb !important;
+}
+
+/* Стили для заголовка модального окна */
+.inventory-modal-header {
+    background: linear-gradient(135deg, #2563eb, #1e40af, #2563eb) !important;
+    background-size: 200% 200% !important;
+    animation: headerShine 3s ease-in-out infinite;
+    border-bottom: 2px solid #2563eb;
+    position: relative;
+    overflow: hidden;
+}
+
+.inventory-modal-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: rotate(45deg);
+    animation: headerGlow 2s ease-in-out infinite;
+}
+
+@keyframes headerShine {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes headerGlow {
+    0%, 100% {
+        transform: rotate(45deg) translateX(-100%);
+    }
+    50% {
+        transform: rotate(45deg) translateX(100%);
+    }
+}
+</style>
+
+<script>
+function equipItem(itemId, category) {
+    console.log('Надевание предмета:', itemId, category);
+
+    fetch(`/api/equip-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category: category,
+            action: 'equip'
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+        if (data.success) {
+            // Закрываем модальное окно инвентаря
+            const inventoryModal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+            if (inventoryModal) {
+                inventoryModal.hide();
+            }
+
+            // Принудительное обновление страницы с очисткой кеша
+            window.location.href = window.location.href.split('?')[0] + '?cache_buster=' + Date.now();
+        } else {
+            showInventoryNotification('error', data.error || 'Ошибка при надевании предмета');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showInventoryNotification('error', 'Ошибка при надевании предмета: ' + error.message);
+    });
+}
+
+function unequipItem(itemId, category) {
+    if (!confirm('Снять это украшение?')) return;
+
+    console.log('Снятие предмета:', itemId, category);
+
+    fetch(`/api/unequip-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category: category,
+            action: 'unequip'
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+        if (data.success) {
+            // Закрываем модальное окно инвентаря
+            const inventoryModal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+            if (inventoryModal) {
+                inventoryModal.hide();
+            }
+
+            // Принудительное обновление страницы с очисткой кеша
+            window.location.href = window.location.href.split('?')[0] + '?cache_buster=' + Date.now();
+        } else {
+            showInventoryNotification('error', data.error || 'Ошибка при снятии предмета');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showInventoryNotification('error', 'Ошибка при снятии предмета: ' + error.message);
+    });
+}
+
+function loadInventory() {
+    fetch('/inventory/?cache_buster=' + Date.now(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('inventoryContent').innerHTML = html;
+    })
+    .catch(error => {
+        console.error('Ошибка загрузки инвентаря:', error);
+        document.getElementById('inventoryContent').innerHTML = `
+            <div class="text-center text-muted py-4">
+                <p style="font-size: 1.2rem;">Ошибка загрузки инвентаря</p>
+            </div>
+        `;
+    });
+}
+
+function showInventoryNotification(type, message) {
+    // Создаем временное уведомление
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} position-fixed`;
+    notification.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        animation: slideInRight 0.3s ease;
+    `;
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi ${type === 'success' ? 'bi-check-circle' : type === 'error' ? 'bi-exclamation-circle' : 'bi-info-circle'} me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Удаляем уведомление через 3 секунды
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Добавляем стили для анимаций уведомлений
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Запускаем отладку при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== ИНВЕНТАРЬ ЗАГРУЖЕН ===');
+    {% if categories %}
+        {% for category, items in categories.items %}
+            console.log('Категория: {{ category }}');
+            {% for inv_item in items %}
+                console.log('Предмет: {{ inv_item.item.name }}, Надето: {{ inv_item.is_equipped }}, ID: {{ inv_item.item.id }}');
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+});
+</script>

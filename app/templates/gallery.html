@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Галерея изображений - Wikiway{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Заголовок и статистика -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-center mb-4">🖼️ Галерея изображений Wikiway</h1>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Форма парсера -->
+    <div class="row mb-5">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">⚙️ Парсер изображений</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="{{ form.url.id_for_label }}" class="form-label">URL страницы:</label>
+                                    {{ form.url }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.max_images.id_for_label }}" class="form-label">Максимум изображений:</label>
+                                    {{ form.max_images }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            🚀 Запустить парсинг
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h4><i class="fas fa-images"></i></h4>
+                    <h5>{{ total_images }}</h5>
+                    <p class="mb-0">Всего изображений</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4><i class="fas fa-link"></i></h4>
+                    <h5>{{ total_images }}</h5>
+                    <p class="mb-0">Ссылок сохранено</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Галерея изображений -->
+    {% if images %}
+        <div class="row">
+            {% for image in images %}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card h-100">
+                        <!-- Отображаем изображение прямо с оригинального URL -->
+                        <img src="{{ image.get_display_url }}"
+                             class="card-img-top gallery-img"
+                             alt="{{ image.alt_text }}"
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Found'"
+                             onclick="openModal(this)">
+
+                        <div class="card-body">
+                            <h6 class="card-title">{{ image.title|truncatechars:30 }}</h6>
+                            <p class="card-text">
+                                <small class="text-muted">{{ image.alt_text|truncatechars:50 }}</small>
+                            </p>
+                            <div class="image-info">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-expand"></i>
+                                    {% if image.width and image.height %}
+                                        {{ image.width }}×{{ image.height }}
+                                    {% else %}
+                                        Размер не указан
+                                    {% endif %}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-calendar"></i> {{ image.created_at|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="btn-group w-100">
+                                <a href="{{ image.get_display_url }}" target="_blank"
+                                   class="btn btn-sm btn-outline-primary" title="Открыть оригинал">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                                <a href="{{ image.image_url }}" target="_blank"
+                                   class="btn btn-sm btn-info" title="Просмотреть URL">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-success"
+                                        onclick="copyToClipboard('{{ image.get_display_url }}')"
+                                        title="Скопировать ссылку">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if images.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if images.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ images.previous_page_number }}">
+                            <i class="fas fa-chevron-left"></i> Назад
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in images.paginator.page_range %}
+                    {% if images.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > images.number|add:'-3' and num < images.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if images.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ images.next_page_number }}">
+                            Вперед <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <div class="text-center mt-5">
+            <div class="alert alert-info">
+                <h4><i class="fas fa-info-circle"></i> Галерея пуста</h4>
+                <p>Используйте парсер выше для загрузки ссылок на изображения с сайта Wikiway</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Модальное окно для просмотра изображения -->
+<div id="imageModal" class="image-modal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <img class="modal-content" id="modalImage">
+    <div id="modalCaption" class="text-white text-center mt-2"></div>
+</div>
+
+<script>
+    // Функции для модального окна
+    function openModal(img) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const caption = document.getElementById('modalCaption');
+
+        modal.style.display = "block";
+        modalImg.src = img.src;
+        caption.innerHTML = img.alt;
+    }
+
+    function closeModal() {
+        document.getElementById('imageModal').style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('imageModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    // Функция для копирования ссылки в буфер обмена
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Показываем уведомление
+            showNotification('Ссылка скопирована в буфер обмена!');
+        }, function(err) {
+            console.error('Ошибка копирования: ', err);
+            // Fallback для старых браузеров
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+            showNotification('Ссылка скопирована!');
+        });
+    }
+
+    function showNotification(message) {
+        // Создаем временное уведомление
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-success position-fixed';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 2000);
+    }
+</script>
+{% endblock %}

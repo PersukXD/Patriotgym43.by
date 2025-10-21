@@ -1,0 +1,661 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+    <!-- Карусель -->
+    <div id="newsCarousel" class="carousel slide mb-6 shadow rounded" data-bs-ride="carousel" style="margin-top: 2rem;">
+        <div class="carousel-indicators">
+            {% for item in carousel_data %}
+            <button type="button" data-bs-target="#newsCarousel" data-bs-slide-to="{{ forloop.counter0 }}"
+                    class="{% if forloop.first %}active{% endif %}" aria-label="Slide {{ forloop.counter }}"></button>
+            {% endfor %}
+        </div>
+
+        <div class="carousel-inner rounded">
+            {% for item in carousel_data %}
+            <div class="carousel-item {% if forloop.first %}active{% endif %}" data-bs-interval="5000">
+                <img src="{{ item.image.get_display_url }}"
+                     class="d-block w-100 carousel-image"
+                     alt="{{ item.image.alt_text|default:item.quote }}"
+                     onerror="this.src='{% static 'images/placeholder.jpg' %}'">
+
+                <div class="carousel-caption d-none d-md-block">
+                    <div class="quote-container">
+                        <div class="quote-icon">
+                            <i class="bi bi-quote"></i>
+                        </div>
+                        <blockquote class="quote-text">
+                            "{{ item.quote }}"
+                        </blockquote>
+                        <div class="quote-author">
+                            — {{ item.author }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-caption d-block d-md-none">
+                    <div class="mobile-quote-container">
+                        <p class="mb-0">"{{ item.quote|truncatewords:8 }}"</p>
+                        <small class="text-white-50">— {{ item.author }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#newsCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Предыдущий</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#newsCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Следующий</span>
+        </button>
+    </div>
+
+    <!-- Разделительная линия -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="section-divider" id="section-divider">
+                <div class="divider-line"></div>
+                <div class="divider-text">
+                    <i class="bi bi-arrow-down"></i>
+                    <span>Листайте вниз чтобы увидеть новости</span>
+                    <i class="bi bi-arrow-down"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция с новостями -->
+    <div id="news-cards-section" class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4 text-center">Последние новости</h2>
+
+            {% if news %}
+            <div class="row" id="news-cards-container">
+                {% for item in news|slice:":4" %}
+                <div class="col-md-6 col-lg-3 mb-4 news-card-item">
+                    <div class="card h-100 shadow-sm news-card">
+                        {% if item.main_image %}
+                        <img src="{{ item.main_image }}" class="card-img-top" alt="{{ item.title }}"
+                             style="height: 200px; object-fit: cover;">
+                        {% else %}
+                        <div class="card-img-top d-flex align-items-center justify-content-center"
+                             style="height: 200px;">
+                            <i class="bi bi-newspaper" style="font-size: 3rem;"></i>
+                        </div>
+                        {% endif %}
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold">{{ item.title }}</h5>
+
+                            <div class="mb-2">
+                                <small>
+                                    <i class="bi bi-calendar me-1"></i>{{ item.date }}
+                                </small>
+                            </div>
+
+                            <p class="card-text flex-grow-1">{{ item.text|truncatewords:20 }}</p>
+
+                            {% if item.additional_images %}
+                            <div class="mb-3">
+                                <small>
+                                    <i class="bi bi-images me-1"></i>
+                                    Ещё {{ item.additional_images|length }} изображений
+                                </small>
+                            </div>
+                            {% endif %}
+
+                            <div class="mt-auto">
+                                <a href="{% url 'news_detail' item.id %}" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-eye me-2"></i>Читать
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <a href="{% url 'news_list' %}" class="btn btn-primary btn-lg px-5 py-3" id="more-news-btn">
+                        <i class="bi bi-newspaper me-2"></i>Узнать больше новостей
+                    </a>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <div class="card shadow-sm">
+                    <div class="card-body py-5">
+                        <i class="bi bi-inbox display-1"></i>
+                        <h3 class="mt-3">Новостей пока нет</h3>
+                        <p>Запустите парсинг, чтобы получить актуальные новости</p>
+                        <form method="post" action="{% url 'run_parser' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-download me-2"></i>Запустить парсинг
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Разделительная линия для мероприятий -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="section-divider" id="events-divider">
+                <div class="divider-line"></div>
+                <div class="divider-text">
+                    <i class="bi bi-arrow-down"></i>
+                    <span>Актуальные мероприятия</span>
+                    <i class="bi bi-arrow-down"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция с мероприятиями -->
+    <div id="events-section" class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4 text-center">Патриотические мероприятия</h2>
+
+            {% if courses %}
+            <div class="row" id="events-cards-container">
+                {% for course in courses|slice:":4" %}
+                <div class="col-md-6 col-lg-3 mb-4 event-card-item">
+                    <div class="card h-100 shadow-sm event-card">
+                        {% if course.image_url %}
+                        <img src="{{ course.image_url }}" class="card-img-top" alt="{{ course.title }}"
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.src='{% static 'images/course-placeholder.jpg' %}'">
+                        {% else %}
+                        <div class="card-img-top d-flex align-items-center justify-content-center"
+                             style="height: 200px;">
+                            <i class="bi bi-calendar-event" style="font-size: 3rem;"></i>
+                        </div>
+                        {% endif %}
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold">{{ course.title|truncatewords:8 }}</h5>
+
+                            <div class="mb-2">
+                                <small>
+                                    <i class="bi bi-clock me-1"></i>{{ course.date_range }}
+                                </small>
+                            </div>
+
+                            <div class="mb-2">
+                                {% if course.is_completed %}
+                                <span class="badge bg-secondary">Завершено</span>
+                                {% else %}
+                                <span class="badge bg-primary">Активно</span>
+                                {% endif %}
+                            </div>
+
+                            <p class="card-text flex-grow-1">{{ course.description|truncatewords:15|default:"Описание мероприятия" }}</p>
+
+                            {% if course.organizers %}
+                            <div class="mb-3">
+                                <small>
+                                    <i class="bi bi-people me-1"></i>
+                                    {{ course.organizers|truncatewords:3 }}
+                                </small>
+                            </div>
+                            {% endif %}
+
+                            <div class="mt-auto">
+                                <a href="{% url 'course_detail' course.id %}" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-info-circle me-2"></i>Подробнее
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <a href="{% url 'courses_list' %}" class="btn btn-primary btn-lg px-5 py-3" id="more-events-btn">
+                        <i class="bi bi-calendar-check me-2"></i>Все мероприятия
+                    </a>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <div class="card shadow-sm">
+                    <div class="card-body py-5">
+                        <i class="bi bi-calendar-x display-1"></i>
+                        <h3 class="mt-3">Мероприятий пока нет</h3>
+                        <p>Запустите парсинг, чтобы получить актуальные мероприятия</p>
+                        <form method="post" action="{% url 'parse_courses' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-download me-2"></i>Запустить парсинг мероприятий
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    #newsCarousel {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 1.2s ease-out 0.3s forwards;
+    }
+
+    .section-divider {
+        position: relative;
+        text-align: center;
+        margin: 3rem 0;
+    }
+
+    .divider-line {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--btn-primary-bg), transparent);
+        transform: translateY(-50%);
+    }
+
+    .divider-text {
+        position: relative;
+        display: inline-block;
+        background: var(--section-divider-bg);
+        padding: 0 2rem;
+        color: var(--btn-primary-bg);
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .divider-text i {
+        margin: 0 0.5rem;
+        animation: bounce 2s infinite;
+    }
+
+    .divider-text i:last-child {
+        animation-delay: 0.5s;
+    }
+
+    #news-cards-section {
+        opacity: 0;
+        transform: translateY(50px);
+        transition: all 0.8s ease-out;
+    }
+
+    #news-cards-section.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .news-card-item {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease-out;
+    }
+
+    .news-card-item.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    #events-section {
+        opacity: 0;
+        transform: translateY(50px);
+        transition: all 0.8s ease-out;
+    }
+
+    #events-section.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .event-card-item {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease-out;
+    }
+
+    .event-card-item.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .news-card-item:nth-child(1) { transition-delay: 0.1s; }
+    .news-card-item:nth-child(2) { transition-delay: 0.2s; }
+    .news-card-item:nth-child(3) { transition-delay: 0.3s; }
+    .news-card-item:nth-child(4) { transition-delay: 0.4s; }
+
+    .event-card-item:nth-child(1) { transition-delay: 0.1s; }
+    .event-card-item:nth-child(2) { transition-delay: 0.2s; }
+    .event-card-item:nth-child(3) { transition-delay: 0.3s; }
+    .event-card-item:nth-child(4) { transition-delay: 0.4s; }
+
+    #more-news-btn, #more-events-btn {
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.6s ease-out 0.8s;
+    }
+
+    #news-cards-section.visible #more-news-btn,
+    #events-section.visible #more-events-btn {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .event-card {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        border-left: 4px solid var(--btn-primary-bg);
+    }
+
+    .event-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 123, 255, 0.1) !important;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-5px);
+        }
+        60% {
+            transform: translateY(-3px);
+        }
+    }
+
+    .carousel-image {
+        height: 500px;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .quote-container {
+        background: rgba(128, 128, 128, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        max-width: 500px;
+        margin: 0 auto;
+        position: relative;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .quote-icon {
+        font-size: 2rem;
+        color: white;
+        margin-bottom: 0.8rem;
+        opacity: 0.8;
+    }
+
+    .quote-text {
+        font-size: 1.2rem;
+        font-weight: 500;
+        line-height: 1.4;
+        color: white;
+        font-style: italic;
+        margin-bottom: 0.8rem;
+    }
+
+    .quote-author {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 400;
+    }
+
+    .mobile-quote-container {
+        background: rgba(128, 128, 128, 0.3);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(3px);
+        max-width: 85%;
+        margin: 0 auto;
+    }
+
+    .news-card, .event-card {
+        background: var(--card-bg);
+        color: var(--card-text);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .news-card:hover, .event-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, var(--btn-primary-bg), var(--btn-primary-hover));
+        border: none;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(45deg, var(--btn-primary-hover), #004085);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-outline-primary {
+        border-color: var(--btn-primary-bg);
+        color: var(--btn-primary-bg);
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--btn-primary-bg);
+        border-color: var(--btn-primary-bg);
+        color: white;
+    }
+
+    .card-img-top {
+        border-radius: 15px 15px 0 0;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        line-height: 1.4;
+        min-height: 3rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .card-text {
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+        .carousel-image {
+            height: 400px;
+        }
+
+        .quote-container {
+            padding: 1.2rem;
+            margin: 0 1rem;
+        }
+
+        .quote-text {
+            font-size: 1rem;
+        }
+
+        .quote-icon {
+            font-size: 1.8rem;
+        }
+
+        .carousel-caption {
+            bottom: 1.5rem;
+        }
+
+        #more-news-btn, #more-events-btn {
+            font-size: 1rem;
+            padding: 0.8rem 2rem;
+        }
+
+        .divider-text {
+            font-size: 1rem;
+            padding: 0 1.5rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .carousel-image {
+            height: 350px;
+        }
+
+        .quote-container {
+            padding: 1rem;
+        }
+
+        .quote-text {
+            font-size: 0.9rem;
+        }
+
+        .mobile-quote-container {
+            padding: 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .carousel-caption {
+            bottom: 1rem;
+        }
+
+        #more-news-btn, #more-events-btn {
+            font-size: 0.9rem;
+            padding: 0.7rem 1.5rem;
+        }
+
+        .divider-text {
+            font-size: 0.9rem;
+            padding: 0 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var myCarousel = document.getElementById('newsCarousel');
+        var carousel = new bootstrap.Carousel(myCarousel, {
+            interval: 5000,
+            wrap: true,
+            touch: true
+        });
+
+        document.querySelectorAll('.carousel-image').forEach(function(img) {
+            img.addEventListener('error', function() {
+                this.src = '{% static 'images/placeholder.jpg' %}';
+                this.alt = 'Изображение не загружено';
+            });
+        });
+
+        function checkVisibility() {
+            const elementsToAnimate = [
+                {
+                    section: document.getElementById('news-cards-section'),
+                    cards: document.querySelectorAll('.news-card-item'),
+                    button: document.getElementById('more-news-btn')
+                },
+                {
+                    section: document.getElementById('events-section'),
+                    cards: document.querySelectorAll('.event-card-item'),
+                    button: document.getElementById('more-events-btn')
+                }
+            ];
+
+            elementsToAnimate.forEach(elementGroup => {
+                if (elementGroup.section) {
+                    const sectionPosition = elementGroup.section.getBoundingClientRect().top;
+                    const screenPosition = window.innerHeight / 1.2;
+
+                    if (sectionPosition < screenPosition) {
+                        elementGroup.section.classList.add('visible');
+                        elementGroup.cards.forEach((card, index) => {
+                            setTimeout(() => {
+                                card.classList.add('visible');
+                            }, index * 100);
+                        });
+
+                        if (elementGroup.button) {
+                            setTimeout(() => {
+                                elementGroup.button.style.opacity = '1';
+                                elementGroup.button.style.transform = 'scale(1)';
+                            }, 800);
+                        }
+                    } else {
+                        elementGroup.section.classList.remove('visible');
+                        elementGroup.cards.forEach(card => {
+                            card.classList.remove('visible');
+                        });
+                        if (elementGroup.button) {
+                            elementGroup.button.style.opacity = '0';
+                            elementGroup.button.style.transform = 'scale(0.8)';
+                        }
+                    }
+                }
+            });
+        }
+
+        checkVisibility();
+        window.addEventListener('scroll', checkVisibility);
+        window.addEventListener('resize', checkVisibility);
+
+        document.getElementById('section-divider').addEventListener('click', function() {
+            document.getElementById('news-cards-section').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+
+        document.getElementById('events-divider').addEventListener('click', function() {
+            document.getElementById('events-section').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}

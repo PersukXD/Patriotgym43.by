@@ -1,0 +1,872 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load post_tags %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Левая колонка - информация профиля -->
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-body text-center" style="padding: 30px;">
+                    <!-- КВАДРАТНАЯ АВАТАРКА С РАМКОЙ -->
+                    <div class="avatar-container"
+                         style="position: relative; display: inline-block; width: 184px; height: 184px; margin-bottom: 25px;"
+                         onmouseover="showAvatarButtons()"
+                         onmouseout="hideAvatarButtons()">
+
+                        <!-- СЛОЙ 1: ОСНОВНАЯ АВАТАРКА (КВАДРАТ) -->
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}?v={{ cache_buster }}"
+                                 alt="Аватар"
+                                 style="width: 150px; height: 150px; object-fit: cover; position: absolute; top: 17px; left: 17px; z-index: 1; border-radius: 8px;">
+                        {% else %}
+                            <div style="width: 150px; height: 150px; background: linear-gradient(135deg, var(--btn-primary-bg), var(--btn-primary-hover)); display: flex; align-items: center; justify-content: center; color: white; position: absolute; top: 17px; left: 17px; z-index: 1; border-radius: 8px;">
+                                <i class="bi bi-person-fill" style="font-size: 3.5rem;"></i>
+                            </div>
+                        {% endif %}
+
+                        <!-- СЛОЙ 2: РАМКА АВАТАРКИ -->
+                        {% if profile.active_avatar_frame %}
+                            {% if profile.active_avatar_frame.get_image_url %}
+                                <img src="{{ profile.active_avatar_frame.get_image_url }}?v={{ cache_buster }}"
+                                     alt="Рамка"
+                                     style="width: 184px; height: 184px; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;">
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- СЛОЙ 3: КНОПКИ УПРАВЛЕНИЯ -->
+                        {% if is_own_profile %}
+                        <div id="avatarButtons" class="avatar-buttons-modal" style="position: absolute; top: 0; left: 0; width: 184px; height: 184px; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 3; text-align: center; padding: 10px; transition: all 0.3s ease; border-radius: 10px;">
+                            <button type="button" class="btn btn-change-photo btn-sm mb-2"
+                                    onclick="document.getElementById('avatar-input').click()"
+                                    style="padding: 8px 16px; font-size: 0.9rem; width: 140px;">
+                                <i class="bi bi-camera"></i> Изменить фото
+                            </button>
+                            {% if profile.avatar %}
+                            <button type="button" class="btn btn-delete-avatar btn-sm" onclick="deleteAvatar()"
+                                    style="padding: 8px 16px; font-size: 0.9rem; width: 140px;">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Скрытый input для загрузки аватарки -->
+                    {% if is_own_profile %}
+                    <form id="avatar-form" method="post" enctype="multipart/form-data" style="display: none;">
+                        {% csrf_token %}
+                        <input type="file" id="avatar-input" name="avatar" accept="image/*" onchange="uploadAvatar()">
+                        <input type="hidden" name="action" value="change_avatar">
+                    </form>
+                    {% endif %}
+
+                    <!-- Имя пользователя -->
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <h4 class="card-title mb-0">{{ user.username }}</h4>
+                        {% if profile.active_badge and not profile.active_badge.display_on_avatar %}
+                        <span class="badge bg-primary ms-2">
+                            {{ profile.active_badge.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Статус -->
+                    {% if profile.status %}
+                        <p class="mb-3">{{ profile.status }}</p>
+                    {% else %}
+                        <p class="mb-3">Статус не установлен</p>
+                    {% endif %}
+
+                    <!-- Алмазы и инвентарь -->
+                    <div class="d-flex justify-content-center gap-3 mb-4 flex-wrap">
+                        <span class="badge bg-warning text-dark diamonds-badge">
+                            <span class="diamond-icon">💎</span> {{ profile.diamonds }} алмазов
+                        </span>
+                        {% if is_own_profile %}
+                        <button class="badge bg-primary text-decoration-none border-0 inventory-badge" onclick="openInventory()">
+                            <span class="inventory-icon">🎒</span> Инвентарь
+                        </button>
+                        <a href="{% url 'shop' %}" class="badge bg-info text-decoration-none shop-badge">
+                            <span class="shop-icon">🛍️</span> Магазин
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- О себе -->
+                    {% if profile.bio %}
+                        <p class="card-text mb-4">{{ profile.bio }}</p>
+                    {% else %}
+                        <p class="mb-4">Информация о себе не добавлена</p>
+                    {% endif %}
+
+                    <!-- Статистика -->
+                    <div class="row text-center mt-4">
+                        <div class="col-4">
+                            <h4 class="mb-1">{{ friends_count }}</h4>
+                            <small>Друзей</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="mb-1">{{ posts_count }}</h4>
+                            <small>Постов</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="mb-1">{{ equipped_items|length }}</h4>
+                            <small>Украшений</small>
+                        </div>
+                    </div>
+
+                    <!-- Кнопка редактирования профиля -->
+                    {% if is_own_profile %}
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary w-100 edit-profile-btn" onclick="openEditProfileModal()">
+                            <i class="bi bi-pencil-square me-2"></i>Редактировать профиль
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка - публикации -->
+        <div class="col-md-8">
+            <!-- Форма создания поста -->
+            {% if is_own_profile %}
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <form method="post" action="{% url 'create_post' %}" enctype="multipart/form-data" id="create-post-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="content" class="form-control" rows="3" placeholder="Что у вас нового?" required></textarea>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <select name="post_type" class="form-select" id="postTypeSelect">
+                                    <option value="text">Текст</option>
+                                    <option value="image">Изображение</option>
+                                    <option value="video">Видео</option>
+                                    <option value="audio">Аудио</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="file" name="media_file" class="form-control" id="mediaFileInput" accept="image/*,video/*,audio/*">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                Опубликовать
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Список публикаций -->
+            <div class="posts">
+                {% if posts %}
+                    {% for post in posts %}
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <!-- Маленькая аватарка в посте с рамкой -->
+                                <div style="position: relative; width: 64px; height: 64px; margin-right: 15px;">
+                                    <!-- Основная аватарка -->
+                                    {% if post.author.userprofile.avatar %}
+                                        <img src="{{ post.author.userprofile.avatar.url }}?v={{ cache_buster }}"
+                                             alt="Аватар"
+                                             style="width: 48px; height: 48px; object-fit: cover; position: absolute; top: 8px; left: 8px; z-index: 1; border-radius: 6px;">
+                                    {% else %}
+                                        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--btn-primary-bg), var(--btn-primary-hover)); display: flex; align-items: center; justify-content: center; color: white; position: absolute; top: 8px; left: 8px; z-index: 1; border-radius: 6px;">
+                                            <i class="bi bi-person-fill" style="font-size: 1.3rem;"></i>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- РАМКА АВАТАРКИ В ПОСТАХ -->
+                                    {% if post.author.userprofile.active_avatar_frame %}
+                                        {% if post.author.userprofile.active_avatar_frame.get_image_url %}
+                                            <img src="{{ post.author.userprofile.active_avatar_frame.get_image_url }}?v={{ cache_buster }}"
+                                                 alt="Рамка"
+                                                 style="width: 64px; height: 64px; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;">
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">{{ post.author.username }}</h5>
+                                    <small>{{ post.created_at|date:"d M Y H:i" }}</small>
+                                </div>
+                            </div>
+                            <p class="card-text mb-3">{{ post.content|linebreaksbr }}</p>
+                            {% if post.media_file %}
+                                {% if post.post_type == 'image' %}
+                                    <img src="{{ post.media_file.url }}?v={{ cache_buster }}" class="img-fluid rounded mb-2" alt="Изображение"
+                                         style="max-height: 500px; object-fit: contain;">
+                                {% elif post.post_type == 'video' %}
+                                    <video controls class="w-100 rounded mb-2" style="max-height: 500px;">
+                                        <source src="{{ post.media_file.url }}?v={{ cache_buster }}" type="video/mp4">
+                                        Ваш браузер не поддерживает видео.
+                                    </video>
+                                {% elif post.post_type == 'audio' %}
+                                    <div class="bg-light rounded p-3 mb-2">
+                                        <audio controls class="w-100">
+                                            <source src="{{ post.media_file.url }}?v={{ cache_buster }}" type="audio/mpeg">
+                                            Ваш браузер не поддерживает аудио.
+                                        </audio>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="card shadow">
+                        <div class="card-body text-center py-5">
+                            {% if is_own_profile %}
+                                <p class="mb-2">У вас пока нет публикаций</p>
+                                <small>Создайте свой первый пост!</small>
+                            {% else %}
+                                <p class="mb-2">У этого пользователя пока нет публикаций</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования профиля -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProfileModalLabel">
+                    <i class="bi bi-pencil-square me-2"></i>Редактировать профиль
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data" id="profile-form-modal">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <input type="text" name="status" class="form-control" value="{{ profile.status|default:'' }}"
+                               placeholder="Введите ваш статус">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">О себе</label>
+                        <textarea name="bio" class="form-control" rows="4" placeholder="Расскажите о себе">{{ profile.bio|default:'' }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Сохранить изменения
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно инвентаря -->
+<div class="modal fade" id="inventoryModal" tabindex="-1" aria-labelledby="inventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header inventory-modal-header">
+                <h5 class="modal-title" id="inventoryModalLabel" style="color: white;">
+                    <i class="bi bi-bag me-2"></i>Мой инвентарь
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: linear-gradient(135deg, #1e1e2f, #2d2d44); color: white;">
+                <div id="inventoryContent">
+                    <!-- Контент инвентаря будет загружен здесь -->
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="mt-2">Загрузка инвентаря...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.container.mt-5 {
+    margin-top: 80px !important;
+}
+
+.avatar-container * {
+    box-sizing: border-box !important;
+}
+
+.avatar-frame-container,
+.avatar-image-container {
+    display: none !important;
+}
+
+.avatar-container img:first-child {
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--btn-primary-bg), var(--btn-primary-hover));
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--btn-primary-hover), #004085);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--btn-primary-bg);
+    color: var(--btn-primary-bg);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background: var(--btn-primary-bg);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+}
+
+.badge {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card {
+    transition: all 0.3s ease;
+    border: 2px solid var(--btn-primary-bg) !important;
+    background: var(--card-bg);
+    color: var(--card-text);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 123, 255, 0.3);
+}
+
+.avatar-container {
+    transition: all 0.3s ease;
+}
+
+.avatar-container:hover {
+    transform: scale(1.05);
+}
+
+/* СТИЛИ ДЛЯ ПОЛЕЙ ВВОДА КАК В HEADER */
+.form-control, .form-select {
+    transition: all 0.3s ease;
+    border: 2px solid var(--search-border);
+    background-color: var(--search-bg) !important;
+    color: var(--search-text) !important;
+    border-radius: 8px;
+}
+
+.form-control::placeholder {
+    color: var(--search-placeholder) !important;
+}
+
+/* УБИРАЕМ ВСЕ СТАНДАРТНЫЕ ОБВОДКИ */
+.form-control:focus, .form-select:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: var(--search-border) !important;
+    background-color: var(--search-bg) !important;
+    color: var(--search-text) !important;
+}
+
+/* МЯГКОЕ СИНЕЕ СВЕЧЕНИЕ ПРИ ФОКУСЕ КАК В HEADER */
+.search-input:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25) !important;
+    border-color: var(--nav-link-hover) !important;
+    background-color: var(--search-bg) !important;
+    color: var(--search-text) !important;
+}
+
+/* Убираем обводку у всех элементов при фокусе */
+*:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Специфично для кнопок */
+button:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.avatar-buttons-modal {
+    background: rgba(108, 117, 125, 0.95) !important;
+    border-radius: 10px;
+}
+
+.avatar-buttons-modal .btn-change-photo {
+    background: white !important;
+    color: #333 !important;
+    border: 2px solid white;
+}
+
+.avatar-buttons-modal .btn-delete-avatar {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+    color: white !important;
+    border: 2px solid #dc3545;
+}
+
+.diamonds-badge {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+}
+
+.diamonds-badge:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(255, 193, 7, 0.4);
+}
+
+.inventory-badge {
+    position: relative;
+    transition: all 0.4s ease;
+    overflow: hidden;
+}
+
+.inventory-badge:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+    background: linear-gradient(135deg, var(--btn-primary-hover), #004085) !important;
+}
+
+.shop-badge {
+    position: relative;
+    transition: all 0.4s ease;
+    overflow: hidden;
+}
+
+.shop-badge:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(23, 162, 184, 0.4);
+    background: linear-gradient(135deg, #138496, #0c5460) !important;
+}
+
+.edit-profile-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+}
+
+.edit-profile-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 123, 255, 0.4);
+}
+
+.modal-content {
+    background: var(--modal-bg);
+    color: var(--modal-text);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+}
+
+/* Стили для инвентаря */
+.inventory-modal-header {
+    background: linear-gradient(135deg, #007bff, #0056b3, #007bff) !important;
+    background-size: 200% 200% !important;
+    animation: headerShine 3s ease-in-out infinite;
+    border-bottom: 2px solid #007bff;
+    position: relative;
+    overflow: hidden;
+}
+
+.inventory-modal-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: rotate(45deg);
+    animation: headerGlow 2s ease-in-out infinite;
+}
+
+@keyframes headerShine {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes headerGlow {
+    0%, 100% {
+        transform: rotate(45deg) translateX(-100%);
+    }
+    50% {
+        transform: rotate(45deg) translateX(100%);
+    }
+}
+
+.rarity-common { color: #b0b0b0; }
+.rarity-rare { color: #007bff; }
+.rarity-epic { color: #9c27b0; }
+.rarity-legendary { color: #ff9800; }
+
+.inventory-item:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+}
+
+.equip-btn:hover {
+    background: linear-gradient(135deg, #34ce57, #229954) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.4);
+}
+
+.unequip-btn:hover {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(220, 53, 69, 0.4);
+}
+
+.equipped-item {
+    background: rgba(0, 123, 255, 0.15) !important;
+    border: 1px solid #007bff !important;
+}
+</style>
+
+<!-- ДОБАВЛЕНО: JavaScript функции в основном контенте для немедленной доступности -->
+<script>
+// Глобальные функции, доступные сразу после загрузки страницы
+function openInventory() {
+    console.log('openInventory вызвана');
+    const modalElement = document.getElementById('inventoryModal');
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        // Загружаем инвентарь при открытии модального окна
+        loadInventory();
+    } else {
+        console.error('Элемент inventoryModal не найден');
+    }
+}
+
+function openEditProfileModal() {
+    console.log('openEditProfileModal вызвана');
+    const modalElement = document.getElementById('editProfileModal');
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    } else {
+        console.error('Элемент editProfileModal не найден');
+    }
+}
+
+function showAvatarButtons() {
+    const buttons = document.getElementById('avatarButtons');
+    if (buttons) {
+        buttons.style.display = 'flex';
+    }
+}
+
+function hideAvatarButtons() {
+    const buttons = document.getElementById('avatarButtons');
+    if (buttons) {
+        buttons.style.display = 'none';
+    }
+}
+
+function uploadAvatar() {
+    const fileInput = document.getElementById('avatar-input');
+    if (fileInput.files.length > 0) {
+        document.getElementById('avatar-form').submit();
+    }
+}
+
+function deleteAvatar() {
+    if (confirm('Вы уверены, что хотите удалить аватарку?')) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="delete_avatar">
+            <input type="hidden" name="cache_buster" value="${Date.now()}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Функция для загрузки инвентаря
+function loadInventory() {
+    const inventoryContent = document.getElementById('inventoryContent');
+    console.log('🔄 Загрузка инвентаря из профиля...');
+
+    // Показываем индикатор загрузки
+    inventoryContent.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="mt-2 text-muted">Загрузка инвентаря...</p>
+        </div>
+    `;
+
+    fetch('/inventory/?cache_buster=' + Date.now(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+        },
+    })
+    .then(response => {
+        console.log('📥 Ответ получен, статус:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(html => {
+        console.log('✅ HTML инвентаря получен, длина:', html.length);
+        inventoryContent.innerHTML = html;
+
+        // Проверяем содержимое
+        if (html.includes('empty-inventory')) {
+            console.log('⚠️ Инвентарь отображается как пустой');
+        } else {
+            console.log('🎉 Инвентарь загружен с предметами');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Ошибка загрузки инвентаря:', error);
+        inventoryContent.innerHTML = `
+            <div class="empty-inventory text-center py-5">
+                <i class="bi bi-exclamation-triangle" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                <h5 style="color: white; margin-bottom: 1rem;">Ошибка загрузки инвентаря</h5>
+                <p style="color: #b0b0b0; margin-bottom: 2rem;">${error.message}</p>
+                <button class="btn btn-primary mt-2" onclick="loadInventory()"
+                        style="background: linear-gradient(135deg, #2563eb, #1e40af); border: none; padding: 10px 20px; border-radius: 8px;">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Попробовать снова
+                </button>
+            </div>
+        `;
+    });
+}
+
+// Функции для работы с инвентарем
+function equipItem(itemId) {
+    console.log('Надевание предмета:', itemId);
+
+    fetch(`/api/equip-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+        if (data.success) {
+            showNotification('success', `🎉 "${data.item_name}" теперь активно!`);
+
+            // Закрываем модальное окно инвентаря
+            const inventoryModal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+            if (inventoryModal) {
+                inventoryModal.hide();
+            }
+
+            // Обновляем страницу через 1 секунду
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('error', data.error || 'Ошибка при надевании предмета');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('error', 'Ошибка при надевании предмета: ' + error.message);
+    });
+}
+
+function unequipItem(itemId, itemName) {
+    if (!confirm(`Снять "${itemName}"?`)) return;
+
+    console.log('Снятие предмета:', itemId);
+
+    fetch(`/api/unequip-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+        if (data.success) {
+            showNotification('success', `📦 "${data.item_name}" снято!`);
+
+            // Закрываем модальное окно инвентаря
+            const inventoryModal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+            if (inventoryModal) {
+                inventoryModal.hide();
+            }
+
+            // Обновляем страницу через 1 секунду
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('error', data.error || 'Ошибка при снятии предмета');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('error', 'Ошибка при снятии предмета: ' + error.message);
+    });
+}
+
+function showNotification(type, message) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} position-fixed`;
+    notification.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        animation: slideInRight 0.3s ease;
+    `;
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi ${type === 'success' ? 'bi-check-circle' : type === 'error' ? 'bi-exclamation-circle' : 'bi-info-circle'} me-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Добавляем стили для анимаций уведомлений
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Дополнительные функции для работы с профилем
+document.addEventListener('DOMContentLoaded', function() {
+    const profileFormModal = document.getElementById('profile-form-modal');
+    if (profileFormModal) {
+        profileFormModal.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            formData.append('cache_buster', Date.now());
+
+            fetch('' + '?cache_buster=' + Date.now(), {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    showNotification('error', 'Ошибка при сохранении: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', 'Ошибка при сохранении профиля');
+            });
+        });
+    }
+
+    // Убираем обводку у всех элементов при фокусе
+    document.addEventListener('focus', function(e) {
+        if (e.target.matches('input, textarea, select, button')) {
+            e.target.style.outline = 'none';
+            e.target.style.boxShadow = 'none';
+        }
+    }, true);
+
+    console.log('=== ПРОФИЛЬ ЗАГРУЖЕН ===');
+    console.log('openInventory доступна:', typeof openInventory === 'function');
+    console.log('openEditProfileModal доступна:', typeof openEditProfileModal === 'function');
+    console.log('is_own_profile:', {{ is_own_profile|yesno:"true,false" }});
+});
+</script>
+{% endblock %}

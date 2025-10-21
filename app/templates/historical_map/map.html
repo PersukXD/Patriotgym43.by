@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Историческая карта Беларуси</title>
+
+    <!-- Подключение Bootstrap и Leaflet -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="/static/historical_map/styles-2/styles.css">
+
+    <style>
+        /* СБРОС СТИЛЕЙ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* CSS ПЕРЕМЕННЫЕ ДЛЯ ТЕМ */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #000000;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --header-bg: #ffffff;
+            --header-text: #2c3e50;
+            --sidebar-bg: #f8f9fa;
+            --sidebar-content-bg: #ffffff;
+            --sidebar-header-bg: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            --sidebar-header-text: #ffffff;
+            --map-bg: #ffffff;
+            --card-bg: #ffffff;
+            --modal-bg: #ffffff;
+            --modal-text: #212529;
+            --search-bg: #ffffff;
+            --search-text: #000000;
+            --search-border: #e9ecef;
+            --search-placeholder: #6c757d;
+            --quest-section-bg: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            --section-bg: #ffffff;
+            --category-bg: #ffffff;
+            --category-text: #000000;
+            --category-border: #dee2e6;
+            --event-active-bg: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            --event-active-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --header-bg: #1e293b;
+            --header-text: #f1f5f9;
+            --sidebar-bg: #1e293b;
+            --sidebar-content-bg: #1e293b;
+            --sidebar-header-bg: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            --sidebar-header-text: #ffffff;
+            --map-bg: #0f172a;
+            --card-bg: #1e293b;
+            --modal-bg: #1e293b;
+            --modal-text: #f1f5f9;
+            --search-bg: #334155;
+            --search-text: #f1f5f9;
+            --search-border: #475569;
+            --search-placeholder: #94a3b8;
+            --quest-section-bg: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            --section-bg: #1e293b;
+            --category-bg: #334155;
+            --category-text: #f1f5f9;
+            --category-border: #475569;
+            --event-active-bg: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            --event-active-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            transition: all 0.5s ease;
+        }
+
+        /* КНОПКА СМЕНЫ ТЕМЫ В ПРАВОМ УГЛУ */
+        .theme-toggle-right {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-toggle-right:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-toggle-right.rotating i {
+            animation: rotateTheme 0.6s ease;
+        }
+
+        @keyframes rotateTheme {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .theme-toggle-right i {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            transition: all 0.4s ease;
+        }
+
+        /* ШАПКА */
+        header {
+            background-color: var(--header-bg) !important;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-container {
+            padding: 0.75rem 0;
+            max-width: 100%;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        /* СТИЛИ ДЛЯ ЛОГОТИПА */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        .logo-image {
+            height: 45px;
+            width: auto;
+            max-width: 150px;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-image:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-list {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            align-items: center;
+            margin-right: 25px;
+        }
+
+        .nav-link {
+            color: var(--header-text) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            color: #3498db !important;
+            background-color: rgba(52, 152, 219, 0.1);
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background-color: #3498db;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::after {
+            width: 80%;
+        }
+
+        /* ПОИСК */
+        .search-form {
+            position: relative;
+            min-width: 410px;
+            flex-grow: 1;
+            max-width: 610px;
+            margin: 0 1.5rem 0 0;
+            transform: translateX(-10px);
+        }
+
+        .search-input-group {
+            width: 100%;
+            display: flex;
+        }
+
+        .search-input {
+            background-color: var(--search-bg) !important;
+            color: var(--search-text) !important;
+            border: 2px solid var(--search-border);
+            border-radius: 25px 0 0 25px !important;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .search-input::placeholder {
+            color: var(--search-placeholder) !important;
+        }
+
+        .search-input:focus {
+            background-color: var(--search-bg) !important;
+            color: var(--search-text) !important;
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+            outline: none;
+        }
+
+        .search-btn {
+            border-radius: 0 25px 25px 0 !important;
+            border: 2px solid var(--search-border);
+            border-left: none;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* АНИМАЦИИ ДЛЯ КНОПОК */
+        .animated-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .animated-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .animated-btn:hover::before {
+            left: 100%;
+        }
+
+        .animated-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .animated-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .search-btn:hover {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 2px solid #3498db;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            margin-top: 5px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-result-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: var(--text-primary) !important;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .search-result-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary) !important;
+            font-size: 1rem;
+        }
+
+        .search-result-date {
+            font-size: 0.875rem;
+            color: var(--text-secondary) !important;
+        }
+
+        .search-result-type {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            color: var(--text-secondary) !important;
+        }
+
+        .no-results {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-secondary) !important;
+            font-size: 1rem;
+        }
+
+        /* КНОПКИ С АНИМАЦИЯМИ */
+        .btn-outline-light {
+            color: var(--header-text) !important;
+            border-color: var(--header-text) !important;
+            background: transparent;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            border: 1px solid;
+            white-space: nowrap;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-outline-light:hover {
+            background-color: var(--header-text) !important;
+            color: var(--header-bg) !important;
+            text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-warning {
+            background-color: #3498db !important;
+            border-color: #3498db !important;
+            color: white !important;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            border: 1px solid;
+            white-space: nowrap;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-warning:hover {
+            background-color: #2980b9 !important;
+            border-color: #2980b9 !important;
+            transform: translateY(-2px);
+            color: white !important;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        /* ВЫРАВНИВАНИЕ ЭЛЕМЕНТОВ */
+        .header-buttons {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            transform: translateX(-10px);
+            margin-left: 25px;
+        }
+
+        .header-buttons .btn-outline-light {
+            margin-right: 12px !important;
+        }
+
+        /* ОСНОВНОЙ КОНТЕЙНЕР */
+        .map-app-container {
+            display: flex;
+            height: calc(100vh - 70px);
+            margin-top: 70px;
+            background: var(--bg-primary);
+            transition: background-color 0.5s ease;
+        }
+
+        /* СТРУКТУРА ДЛЯ КАРТЫ */
+        .sidebar {
+            width: 420px;
+            min-width: 380px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: auto;
+            transition: all 0.5s ease;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            background: var(--sidebar-header-bg);
+            color: var(--sidebar-header-text);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.5s ease;
+            width: 420px;
+            min-width: 380px;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: var(--sidebar-content-bg);
+            transition: all 0.5s ease;
+            width: 440px;
+            min-width: 380px;
+        }
+
+        .main-content {
+            flex: 1;
+            position: relative;
+            height: 100%;
+            background: var(--map-bg);
+            transition: background-color 0.5s ease;
+        }
+
+        #historical-map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* СТИЛИ ДЛЯ БЛОКОВ В САЙДБАРЕ */
+        .quest-section {
+            background: var(--quest-section-bg);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .diamond-counter {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .diamond-icon {
+            color: #ffd700;
+            font-size: 1.4rem;
+            filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+            animation: diamondSparkle 2s ease-in-out infinite;
+        }
+
+        @keyframes diamondSparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .quest-btn {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .quest-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255,255,255,0.2);
+        }
+
+        .cooldown-text {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            text-align: center;
+            margin-top: 0.75rem;
+            font-weight: 500;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--section-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.5s ease;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1565c0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e1f5fe;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .form-select-sm {
+            font-size: 0.85rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            background: var(--category-bg);
+            color: var(--category-text);
+            transition: all 0.3s ease;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 12px;
+            border: 2px solid var(--category-border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            background: var(--category-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-item:hover {
+            border-color: #2196f3;
+            background: var(--bg-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.15);
+        }
+
+        .category-item.active {
+            border-color: #2196f3;
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+        }
+
+        .category-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .category-item:hover .category-color {
+            transform: scale(1.2);
+        }
+
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .event-item {
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--card-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-item:hover {
+            border-color: #2196f3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.15);
+        }
+
+        /* СТИЛИ ДЛЯ АКТИВНОЙ КАРТОЧКИ - ОСТАЕТСЯ ТЕМНОЙ */
+        .event-item.active {
+            border-color: #2196f3;
+            background: var(--event-active-bg);
+            color: var(--event-active-text);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+        }
+
+        .event-item.active .event-title {
+            color: var(--event-active-text) !important;
+        }
+
+        .event-item.active .event-description {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .event-item.active .event-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .event-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .event-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-date {
+            font-size: 0.8rem;
+            color: #2196f3;
+            background: #e1f5fe;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .event-category {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .event-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            transition: color 0.3s ease;
+        }
+
+        .timeline-container {
+            padding: 1.5rem;
+            background: var(--sidebar-content-bg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-years {
+            font-size: 0.85rem;
+            color: #2196f3;
+            font-weight: 500;
+        }
+
+        .timeline-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 10px;
+            background: var(--border-color);
+            outline: none;
+            -webkit-appearance: none;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+            border: 3px solid white;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
+        }
+
+        /* СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ЗАДАНИЙ С ТЕМНОЙ ТЕМОЙ */
+        .quest-modal .modal-content {
+            background: var(--modal-bg);
+            color: var(--modal-text);
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 25px 50px rgba(33, 150, 243, 0.3);
+            animation: modalSlideIn 0.5s ease-out;
+            transition: all 0.5s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .quest-modal .modal-header {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            border: none;
+            padding: 1.5rem;
+        }
+
+        .quest-modal .modal-body {
+            background: var(--modal-bg);
+            color: var(--modal-text);
+            padding: 2rem;
+        }
+
+        .quest-modal .modal-footer {
+            background: var(--modal-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+
+        /* Стили для кнопок в модальном окне */
+        .topic-btn, .difficulty-btn {
+            padding: 1.25rem;
+            border: 2px solid var(--category-border);
+            border-radius: 15px;
+            background: var(--category-bg);
+            color: var(--category-text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-btn:hover, .difficulty-btn:hover {
+            border-color: #2196f3;
+            background: var(--bg-secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.15);
+        }
+
+        .topic-btn.active, .difficulty-btn.active {
+            border-color: #2196f3;
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+        }
+
+        .difficulty-easy {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .difficulty-medium {
+            color: #ffc107;
+            font-weight: 600;
+        }
+
+        .difficulty-hard {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .topic-btn.active .difficulty-easy,
+        .topic-btn.active .difficulty-medium,
+        .topic-btn.active .difficulty-hard,
+        .difficulty-btn.active .difficulty-easy,
+        .difficulty-btn.active .difficulty-medium,
+        .difficulty-btn.active .difficulty-hard {
+            color: white !important;
+        }
+
+        /* Стили для формы в модальном окне */
+        .quest-modal .form-control {
+            background: var(--search-bg);
+            color: var(--search-text);
+            border: 2px solid var(--search-border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .quest-modal .form-control:focus {
+            background: var(--search-bg);
+            color: var(--search-text);
+            border-color: #2196f3;
+            box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+        }
+
+        .quest-modal .form-label {
+            color: var(--modal-text);
+            font-weight: 500;
+        }
+
+        /* СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ВЫХОДА */
+        .logout-modal .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.4s ease-out;
+            overflow: hidden;
+            border: none;
+            background: var(--modal-bg);
+            color: var(--modal-text);
+            transition: all 0.5s ease;
+        }
+
+        .logout-modal .modal-header {
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logout-modal .modal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255,255,255,0.4) 50%,
+                transparent 100%);
+            animation: shine 3s infinite;
+            z-index: 1;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+
+        .logout-modal .modal-header .modal-title {
+            position: relative;
+            z-index: 2;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .logout-modal .modal-header .btn-close {
+            filter: invert(1);
+            opacity: 0.8;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .logout-modal .modal-header .btn-close:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .logout-modal .modal-body {
+            padding: 2rem;
+            text-align: center;
+            font-size: 1.1rem;
+            background: var(--bg-secondary);
+        }
+
+        .logout-modal .modal-body i.bi-person-check {
+            font-size: 3rem;
+            color: #007bff !important;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .logout-modal .modal-footer {
+            border-top: 1px solid var(--border-color);
+            justify-content: center;
+            padding: 1.5rem;
+            background: var(--modal-bg);
+            gap: 1rem;
+        }
+
+        .logout-modal .btn {
+            min-width: 120px;
+            border-radius: 25px;
+            padding: 10px 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            border: none;
+        }
+
+        .logout-modal .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+        }
+
+        .logout-modal .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+
+        .logout-modal .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .logout-modal .btn:active {
+            transform: translateY(0);
+        }
+
+        /* СТИЛИ ДЛЯ СООБЩЕНИЯ ОБ АВТОРИЗАЦИИ */
+        .auth-required-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 70px);
+            margin-top: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .auth-required-card {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transition: all 0.5s ease;
+        }
+
+        .auth-required-icon {
+            font-size: 4rem;
+            color: #007bff;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ЭЛЕМЕНТЫ УПРАВЛЕНИЯ КАРТОЙ */
+        .map-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
+        /* Стили для фильтрации точек */
+        .marker-hidden {
+            display: none !important;
+        }
+
+        .category-filter-active {
+            animation: pulse-filter 1.5s ease-in-out;
+        }
+
+        @keyframes pulse-filter {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* УТИЛИТЫ */
+        .d-flex { display: flex; }
+        .align-items-center { align-items: center; }
+        .justify-content-center { justify-content: center; }
+        .justify-content-between { justify-content: space-between; }
+        .flex-wrap { flex-wrap: wrap; }
+        .me-2 { margin-right: 0.5rem; }
+        .mb-0 { margin-bottom: 0; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .text-center { text-align: center; }
+        .text-end { text-align: right; }
+        .text-decoration-none { text-decoration: none; }
+        .fw-bold { font-weight: bold; }
+        .fs-4 { font-size: 1.5rem; }
+        .small { font-size: 0.875rem; }
+        .opacity-75 { opacity: 0.75; }
+        .text-muted { color: var(--text-secondary); }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* АДАПТИВНОСТЬ */
+        @media (max-width: 768px) {
+            .theme-toggle-right {
+                top: 15px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
+
+            .theme-toggle-right i {
+                font-size: 1.2rem;
+            }
+
+            .search-form {
+                order: 3;
+                min-width: 100%;
+                max-width: 100%;
+                margin: 1rem 0 0 0;
+                transform: none;
+            }
+
+            .header-content {
+                flex-wrap: wrap !important;
+            }
+
+            .header-buttons {
+                order: 2;
+                margin-left: auto;
+                transform: none;
+            }
+
+            .nav-list {
+                order: 1;
+                margin-bottom: 1rem;
+                margin-right: 0;
+            }
+
+            .logo-container {
+                margin-right: 0;
+            }
+
+            .logo-image {
+                height: 35px;
+                max-width: 120px;
+            }
+
+            .search-input {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .search-btn {
+                padding: 0.5rem 1rem;
+            }
+
+            .header-container {
+                padding: 0.5rem 0;
+            }
+
+            header {
+                min-height: auto;
+            }
+
+            .map-app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 40vh;
+            }
+
+            .main-content {
+                height: 60vh;
+            }
+
+            .auth-required-card {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .auth-required-icon {
+                font-size: 3rem;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-width: 100%;
+            }
+
+            .sidebar-content {
+                width: 100%;
+                min-width: 100%;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .header-content {
+                flex-wrap: nowrap !important;
+            }
+
+            .search-form {
+                flex: 1;
+                margin: 0 1.5rem 0 0;
+            }
+        }
+
+        /* Анимация для алмазов */
+        .diamond-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(52, 152, 219, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 10000;
+            animation: diamondFloat 2s ease-out forwards;
+        }
+
+        @keyframes diamondFloat {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -60%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -80%) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Стили для маркеров заданий */
+        .quest-marker-icon {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 4px 20px rgba(33, 150, 243, 0.5);
+            animation: markerPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes markerPulse {
+            0%, 100% {
+                box-shadow: 0 4px 20px rgba(33, 150, 243, 0.5);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 6px 30px rgba(33, 150, 243, 0.8);
+                transform: scale(1.1);
+            }
+        }
+
+        /* Стили для попапов заданий */
+        .quest-popup-container .leaflet-popup-content-wrapper {
+            border-radius: 20px;
+            padding: 0;
+            border: none;
+            box-shadow: 0 15px 35px rgba(33, 150, 243, 0.3);
+            animation: popupBounce 0.6s ease-out;
+            background: var(--modal-bg);
+            color: var(--modal-text);
+        }
+
+        @keyframes popupBounce {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .quest-popup-content {
+            padding: 1.5rem;
+            min-width: 320px;
+            background: var(--modal-bg);
+            color: var(--modal-text);
+        }
+
+        .quest-header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .quest-info {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #2196f3;
+        }
+
+        .quest-question {
+            background: var(--bg-secondary);
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.25rem;
+            border-left: 4px solid #1976d2;
+            animation: questionPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes questionPulse {
+            0%, 100% { border-left-color: #1976d2; }
+            50% { border-left-color: #2196f3; }
+        }
+
+        .quest-answer-input {
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+            background: var(--search-bg);
+            color: var(--search-text);
+        }
+
+        .quest-answer-input:focus {
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- КНОПКА СМЕНЫ ТЕМЫ В ПРАВОМ УГЛУ -->
+    <div class="theme-toggle-right" id="themeToggleRight" title="Переключить тему">
+        <i class="bi bi-moon-fill"></i>
+    </div>
+
+    <!-- ШАПКА -->
+    <header class="p-3">
+        <div class="container header-container">
+            <div class="header-content">
+                <!-- ЛОГОТИП - ИСПРАВЛЕННЫЙ -->
+                <a href="/" class="logo-container">
+                    {% load static %}
+                    <img src="{% static 'Imagese/Без имени-1.png' %}" alt="Патриот" class="logo-image" id="themeLogo">
+                </a>
+
+                <!-- НАВИГАЦИЯ -->
+                <ul class="nav-list">
+                    <li><a href="/" class="nav-link animated-btn">Главная</a></li>
+                    <li><a href="/news/" class="nav-link animated-btn">Новости</a></li>
+                    <li><a href="/feed/" class="nav-link animated-btn">Лента</a></li>
+                    <li><a href="/historical-map/" class="nav-link animated-btn" style="color: #3498db; font-weight: 600;">Карта</a></li>
+                    <li><a href="/courses/" class="nav-link animated-btn">Мероприятия</a></li>
+                    <li><a href="/shop/" class="nav-link animated-btn">Магазин</a></li>
+                </ul>
+
+                <!-- ПОИСК - РАСШИРЕННЫЙ -->
+                <form class="search-form" id="searchForm" action="/search/" method="get">
+                    <div class="search-input-group">
+                        <input type="search" name="q" class="search-input" placeholder="Поиск новостей и мероприятий..."
+                               aria-label="Search" id="searchInput" autocomplete="off">
+                        <button type="submit" class="search-btn animated-btn">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <div class="search-results" id="searchResults"></div>
+                </form>
+
+                <!-- КНОПКИ АВТОРИЗАЦИИ - ДИНАМИЧЕСКИЕ -->
+                <div class="text-end header-buttons" id="auth-buttons">
+                    {% if user.is_authenticated %}
+                        <a href="/profile/" class="btn-outline-light me-2 animated-btn">
+                            <i class="bi bi-person-circle"></i> Профиль
+                        </a>
+                        <button type="button" class="btn-outline-light me-2 animated-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                            Выйти
+                        </button>
+                    {% else %}
+                        <div class="d-flex align-items-center">
+                            <a href="/login/" class="btn-outline-light me-2 animated-btn">Войти</a>
+                            <a href="/register/" class="btn-warning animated-btn">Зарегистрироваться</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ДАННЫЕ ПОЛЬЗОВАТЕЛЯ -->
+    <div id="user-data"
+         data-user-id="{% if user.is_authenticated %}{{ user.id }}{% else %}anonymous{% endif %}"
+         data-username="{% if user.is_authenticated %}{{ user.username }}{% else %}anonymous{% endif %}"
+         style="display: none;">
+    </div>
+
+    <!-- ПРОВЕРКА АВТОРИЗАЦИИ -->
+    {% if not user.is_authenticated %}
+        <!-- СООБЩЕНИЕ ДЛЯ НЕАВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ -->
+        <div class="auth-required-container">
+            <div class="auth-required-card">
+                <div class="auth-required-icon">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <h2 class="mb-3">Требуется авторизация</h2>
+                <p class="text-muted mb-4">
+                    Для доступа к исторической карте и системе заданий необходимо войти в аккаунт.
+                </p>
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-lg me-md-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Войти в аккаунт
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-success btn-lg">
+                        <i class="bi bi-person-plus"></i> Зарегистрироваться
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- ОСНОВНОЙ КОНТЕНТ ДЛЯ АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ -->
+        <div class="map-app-container">
+            <!-- БОКОВАЯ ПАНЕЛЬ -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h1 class="h4 mb-1">🗺️ История</h1>
+                    <p class="mb-0 small opacity-75">Исследуйте ключевые события</p>
+                </div>
+
+                <div class="sidebar-content">
+                    <!-- СЕКЦИЯ ЗАДАНИЙ -->
+                    <div class="quest-section">
+                        <div class="diamond-counter">
+                            <i class="bi bi-gem diamond-icon"></i>
+                            <span id="diamond-count">0</span> алмазов
+                        </div>
+                        <button class="quest-btn" id="quest-button" data-bs-toggle="modal" data-bs-target="#questModal">
+                            <i class="bi bi-flag"></i>
+                            Задание
+                        </button>
+                        <div class="cooldown-text" id="quest-cooldown">Готово к выполнению!</div>
+                    </div>
+
+                    <!-- ФИЛЬТРЫ -->
+                    <div class="section">
+                        <div class="section-title">
+                            <i class="bi bi-filter"></i>
+                            Полоса событий
+                        </div>
+                        <div class="filters-grid">
+                            <div class="filter-group">
+                                <label class="filter-label">Век:</label>
+                                <select class="form-select form-select-sm" id="century-filter">
+                                    <option value="">Все века</option>
+                                    <option value="9">IX век</option>
+                                    <option value="10">X век</option>
+                                    <option value="11">XI век</option>
+                                    <option value="12">XII век</option>
+                                    <option value="13">XIII век</option>
+                                    <option value="14">XIV век</option>
+                                    <option value="15">XV век</option>
+                                    <option value="16">XVI век</option>
+                                    <option value="17">XVII век</option>
+                                    <option value="18">XVIII век</option>
+                                    <option value="19">XIX век</option>
+                                    <option value="20">XX век</option>
+                                    <option value="21">XXI век</option>
+                                </select>
+                            </div>
+
+                            <div class="filter-group">
+                                <label class="filter-label">Тип события:</label>
+                                <select class="form-select form-select-sm" id="type-filter">
+                                    <option value="">Все типы</option>
+                                    <option value="основания">Основания</option>
+                                    <option value="религия">Религия</option>
+                                    <option value="сражения">Сражения</option>
+                                    <option value="реформы">Реформы</option>
+                                    <option value="восстания">Восстания</option>
+                                    <option value="политика">Политика</option>
+                                    <option value="технологии">Технологии</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="categories-grid" id="category-list">
+                            <!-- Категории будут заполнены через JS -->
+                        </div>
+                    </div>
+
+                    <!-- СОБЫТИЯ -->
+                    <div class="section">
+                        <div class="section-title">
+                            <i class="bi bi-clock-history"></i>
+                            Исторические события
+                        </div>
+
+                        <div class="events-list" id="events-container">
+                            <!-- События будут заполнены через JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ТАЙМЛАЙН -->
+                <div class="timeline-container">
+                    <div class="timeline-header">
+                        <div class="section-title">
+                            <i class="bi bi-sliders"></i>
+                            Хронологическая шкала
+                        </div>
+                        <div class="timeline-years">800 г. - 2024 г.</div>
+                    </div>
+                    <input type="range" class="timeline-slider" id="timeline-slider" min="800" max="2024" value="2024">
+                    <div class="text-center mt-1">
+                        <small class="text-muted" id="current-year">2024 г.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- КАРТА -->
+            <div class="main-content">
+                <div id="historical-map"></div>
+
+                <div class="map-controls">
+                    <button class="control-btn" id="reset-view" title="Сбросить вид и фильтры">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <button class="control-btn" id="toggle-clusters" title="Кластеры">
+                        <i class="bi bi-collection"></i>
+                    </button>
+                    <button class="control-btn" id="show-quest-marker" title="К заданию" style="display: none;">
+                        <i class="bi bi-flag"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- МОДАЛЬНОЕ ОКНО ЗАДАНИЯ -->
+        <div class="modal fade quest-modal" id="questModal" tabindex="-1" aria-labelledby="questModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="questModalLabel">
+                            <i class="bi bi-flag"></i> Новое задание
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- ВЫБОР ТЕМЫ -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Выберите тему:</label>
+                            <div class="row g-2" id="topic-selection">
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100 topic-btn" data-topic="основания">
+                                        Основания городов
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100 topic-btn" data-topic="сражения">
+                                        Сражения
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100 topic-btn" data-topic="политика">
+                                        Политика
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100 topic-btn" data-topic="культура">
+                                        Культура
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ВЫБОР СЛОЖНОСТИ -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Выберите сложность:</label>
+                            <div class="row g-2" id="difficulty-selection">
+                                <div class="col-4">
+                                    <button class="btn btn-outline-success w-100 difficulty-btn" data-difficulty="easy">
+                                        <span class="difficulty-easy">Легкая</span><br>
+                                        <small>+1 алмаз</small>
+                                    </button>
+                                </div>
+                                <div class="col-4">
+                                    <button class="btn btn-outline-warning w-100 difficulty-btn" data-difficulty="medium">
+                                        <span class="difficulty-medium">Средняя</span><br>
+                                        <small>+3 алмаза</small>
+                                    </button>
+                                </div>
+                                <div class="col-4">
+                                    <button class="btn btn-outline-danger w-100 difficulty-btn" data-difficulty="hard">
+                                        <span class="difficulty-hard">Сложная</span><br>
+                                        <small>+5 алмазов</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ОБЛАСТЬ ВОПРОСА -->
+                        <div id="quest-area" style="display: none;">
+                            <hr>
+                            <div class="quest-content">
+                                <h5 id="quest-question" class="text-center mb-4"></h5>
+                                <div class="mb-3">
+                                    <label for="quest-answer" class="form-label">Ваш ответ:</label>
+                                    <input type="text" class="form-control" id="quest-answer" placeholder="Введите ответ...">
+                                </div>
+                                <div class="text-center">
+                                    <button class="btn btn-success" id="submit-answer">
+                                        <i class="bi bi-check-circle"></i> Проверить ответ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        <button type="button" class="btn btn-primary" id="start-quest" disabled>
+                            <i class="bi bi-play-circle"></i> Начать задание
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- МОДАЛЬНОЕ ОКНО ВЫХОДА -->
+        <div class="modal fade logout-modal" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoutModalLabel">
+                            <i class="bi bi-question-circle"></i> Подтверждение выхода
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <i class="bi bi-person-check" style="font-size: 3rem; color: #007bff;"></i>
+                        </div>
+                        <p class="mb-0">Вы действительно хотите выйти из аккаунта?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Нет, остаться
+                        </button>
+                        <form method="post" action="{% url 'logout' %}" id="logoutForm">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Да, выйти
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- СКРИПТЫ -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <!-- ПОДКЛЮЧАЕМ ВАШИ JS ФАЙЛЫ ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ -->
+    {% if user.is_authenticated %}
+        <script src="/static/historical_map/JS-2/data.js"></script>
+        <script src="/static/historical_map/JS-2/quest-system.js"></script>
+        <script src="/static/historical_map/JS-2/map-system.js"></script>
+        <script src="/static/historical_map/JS-2/app.js"></script>
+    {% endif %}
+
+    <script>
+        // МЕНЕДЖЕР ТЕМ ДЛЯ MAP.HTML
+        class ThemeManagerMap {
+            constructor() {
+                this.currentTheme = localStorage.getItem('theme') || 'light';
+                this.lightLogo = "{% static 'Imagese/Без имени-1.png' %}";
+                this.darkLogo = "{% static 'Imagese/Без имени-2.png' %}";
+                this.init();
+            }
+
+            init() {
+                this.applyTheme(this.currentTheme);
+                this.updateToggleButton();
+                this.updateLogo();
+            }
+
+            applyTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                this.currentTheme = theme;
+                this.updateToggleButton();
+                this.updateLogo();
+            }
+
+            toggleTheme() {
+                const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+                this.applyTheme(newTheme);
+
+                const toggleBtn = document.getElementById('themeToggleRight');
+                toggleBtn.classList.add('rotating');
+                setTimeout(() => {
+                    toggleBtn.classList.remove('rotating');
+                }, 600);
+            }
+
+            updateToggleButton() {
+                const toggleBtn = document.getElementById('themeToggleRight');
+                const icon = toggleBtn.querySelector('i');
+
+                if (this.currentTheme === 'dark') {
+                    icon.className = 'bi bi-sun-fill';
+                    toggleBtn.title = 'Переключить на светлую тему';
+                } else {
+                    icon.className = 'bi bi-moon-fill';
+                    toggleBtn.title = 'Переключить на темную тему';
+                }
+            }
+
+            updateLogo() {
+                const logoElement = document.getElementById('themeLogo');
+                if (logoElement) {
+                    if (this.currentTheme === 'dark') {
+                        logoElement.src = this.darkLogo;
+                    } else {
+                        logoElement.src = this.lightLogo;
+                    }
+                }
+            }
+        }
+
+        const themeManagerMap = new ThemeManagerMap();
+
+        document.getElementById('themeToggleRight').addEventListener('click', function() {
+            themeManagerMap.toggleTheme();
+        });
+
+        // ФУНКЦИЯ ДЛЯ ИСПРАВЛЕНИЯ РАСКЛАДКИ КЛАВИАТУРЫ
+        function fixKeyboardLayout(text) {
+            const layoutMap = {
+                'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н', 'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з',
+                '[': 'х', ']': 'ъ', 'a': 'ф', 's': 'ы', 'd': 'в', 'f': 'а', 'g': 'п', 'h': 'р', 'j': 'о', 'k': 'л',
+                'l': 'д', ';': 'ж', "'": 'э', 'z': 'я', 'x': 'ч', 'c': 'с', 'v': 'м', 'b': 'и', 'n': 'т', 'm': 'ь',
+                ',': 'б', '.': 'ю', '/': '.', '`': 'ё',
+
+                'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y', 'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p',
+                'х': '[', 'ъ': ']', 'ф': 'a', 'ы': 's', 'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k',
+                'д': 'l', 'ж': ';', 'э': "'", 'я': 'z', 'ч': 'x', 'с': 'c', 'м': 'v', 'и': 'b', 'т': 'n', 'ь': 'm',
+                'б': ',', 'ю': '.', 'ё': '`'
+            };
+
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i].toLowerCase();
+                result += layoutMap[char] || text[i];
+            }
+            return result;
+        }
+
+        // ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ РАСКЛАДКИ ТЕКСТА
+        function detectAndFixLayout(text) {
+            // Проверяем, содержит ли текст английские символы, которые могут быть русскими в другой раскладке
+            const englishPattern = /[qwertyuiop\[\]asdfghjkl;'zxcvbnm,\.`]/i;
+            const russianPattern = /[йцукенгшщзхъфывапролджэячсмитьбюё]/i;
+
+            // Если текст содержит английские символы и нет русских, вероятно это неправильная раскладка
+            if (englishPattern.test(text) && !russianPattern.test(text)) {
+                return fixKeyboardLayout(text);
+            }
+
+            return text;
+        }
+
+        // ФУНКЦИЯ ДЛЯ НОРМАЛИЗАЦИИ ТЕКСТА (ПРИВЕДЕНИЕ К НИЖНЕМУ РЕГИСТРУ И ИСПРАВЛЕНИЕ РАСКЛАДКИ)
+        function normalizeSearchQuery(text) {
+            // Сначала исправляем раскладку
+            const fixedLayout = detectAndFixLayout(text);
+            // Затем приводим к нижнему регистру для регистронезависимого поиска
+            return fixedLayout.toLowerCase();
+        }
+
+        // ФУНКЦИЯ ДЛЯ ФИЛЬТРАЦИИ ПО КАТЕГОРИЯМ
+
+
+        // ФУНКЦИЯ ДЛЯ ОБРАБОТКИ ПОИСКА
+        function handleSearch(query) {
+            if (query && query.trim().length > 0) {
+                // Нормализуем запрос перед отправкой
+                const normalizedQuery = normalizeSearchQuery(query.trim());
+                const encodedQuery = encodeURIComponent(normalizedQuery);
+                window.location.href = `/search/?q=${encodedQuery}`;
+            }
+        }
+
+        // ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Страница карты загружена, инициализация...');
+
+            // Обработчик формы поиска
+            const searchForm = document.getElementById('searchForm');
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            let searchTimeout;
+
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const query = searchInput.value;
+                    handleSearch(query);
+                });
+            }
+
+            // Обработчик для кнопки поиска
+            const searchBtn = document.querySelector('.search-btn');
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function() {
+                    const query = searchInput.value;
+                    handleSearch(query);
+                });
+            }
+
+            // Обработчик Enter в поле поиска
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        handleSearch(this.value);
+                    }
+                });
+            }
+
+            // АВТОЗАПОЛНЕНИЕ ПОИСКА С ИСПРАВЛЕНИЕМ РАСКЛАДКИ
+            if (searchInput && searchResults) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const query = this.value.trim();
+
+                    if (query.length < 2) {
+                        searchResults.style.display = 'none';
+                        return;
+                    }
+
+                    searchTimeout = setTimeout(() => {
+                        performSearch(query);
+                    }, 300);
+                });
+
+                searchInput.addEventListener('focus', function() {
+                    const query = this.value.trim();
+                    if (query.length >= 2 && searchResults.innerHTML) {
+                        searchResults.style.display = 'block';
+                    }
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.search-form')) {
+                        searchResults.style.display = 'none';
+                    }
+                });
+
+                searchResults.addEventListener('click', function(e) {
+                    const resultItem = e.target.closest('.search-result-item');
+                    if (resultItem) {
+                        const searchForm = document.getElementById('searchForm');
+                        searchInput.value = resultItem.querySelector('.search-result-title').textContent;
+                        searchForm.submit();
+                    }
+                });
+
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        searchResults.style.display = 'none';
+                    }
+                });
+
+                // Обработка отправки формы поиска с исправлением раскладки
+                if (searchForm) {
+                    searchForm.addEventListener('submit', function(e) {
+                        const query = searchInput.value.trim();
+                        if (query) {
+                            const fixedQuery = detectAndFixLayout(query);
+                            if (fixedQuery !== query) {
+                                searchInput.value = fixedQuery;
+                                // Не прерываем отправку формы, просто исправляем запрос
+                            }
+                        }
+                    });
+                }
+            }
+
+            function performSearch(query) {
+                // Исправляем раскладку перед отправкой запроса
+                const normalizedQuery = normalizeSearchQuery(query);
+
+                // Реальный AJAX запрос к серверу для автозаполнения
+                fetch(`/search/?q=${encodeURIComponent(normalizedQuery)}&ajax=1`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        displaySearchResults(data.results || [], query);
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        // Заглушка на случай ошибки
+                        const mockResults = getMockResults(normalizedQuery);
+                        displaySearchResults(mockResults, query);
+                    });
+            }
+
+            function getMockResults(query) {
+                // Демо-данные для автозаполнения
+                const allResults = [
+                    {
+                        title: 'Основание Минска',
+                        date: '1067 г.',
+                        type: 'news',
+                        url: '/news/1'
+                    },
+                    {
+                        title: 'Грюнвальдская битва',
+                        date: '1410 г.',
+                        type: 'event',
+                        url: '/events/1'
+                    },
+                    {
+                        title: 'Битва под Оршей',
+                        date: '1514 г.',
+                        type: 'event',
+                        url: '/events/2'
+                    },
+                    {
+                        title: 'Восстание Калиновского',
+                        date: '1863 г.',
+                        type: 'news',
+                        url: '/news/2'
+                    },
+                    {
+                        title: 'Создание ВКЛ',
+                        date: '1236 г.',
+                        type: 'event',
+                        url: '/events/3'
+                    },
+                    {
+                        title: 'Люблинская уния',
+                        date: '1569 г.',
+                        type: 'event',
+                        url: '/events/4'
+                    },
+                    {
+                        title: 'Восстание 1863 года',
+                        date: '1863 г.',
+                        type: 'news',
+                        url: '/news/3'
+                    },
+                    {
+                        title: 'Образование БНР',
+                        date: '1918 г.',
+                        type: 'news',
+                        url: '/news/4'
+                    }
+                ];
+
+                // Фильтруем результаты по нормализованному запросу
+                return allResults.filter(result =>
+                    normalizeSearchQuery(result.title).includes(normalizeSearchQuery(query))
+                ).slice(0, 5); // Ограничиваем до 5 результатов
+            }
+
+            function displaySearchResults(results, query) {
+                if (!searchResults) return;
+
+                searchResults.innerHTML = '';
+
+                if (results.length === 0) {
+                    searchResults.innerHTML = '<div class="no-results">Ничего не найдено по запросу "' + query + '"</div>';
+                } else {
+                    results.forEach(result => {
+                        const resultElement = document.createElement('div');
+                        resultElement.className = 'search-result-item';
+
+                        // Добавляем иконку в зависимости от типа
+                        const icon = result.type === 'news' ?
+                            '<i class="bi bi-newspaper text-primary me-2"></i>' :
+                            '<i class="bi bi-calendar-event text-success me-2"></i>';
+
+                        resultElement.innerHTML = `
+                            <div class="search-result-title">${icon}${result.title}</div>
+                            <div class="search-result-date">${result.date}</div>
+                            <div class="search-result-type">${result.type === 'news' ? 'Новость' : 'Мероприятие'}</div>
+                        `;
+
+                        // Добавляем обработчик клика
+                        resultElement.addEventListener('click', function() {
+                            window.location.href = result.url;
+                        });
+
+                        searchResults.appendChild(resultElement);
+                    });
+                }
+
+                searchResults.style.display = 'block';
+            }
+
+            // Обработчик для модального окна выхода (как в base.html)
+            const logoutForm = document.getElementById('logoutForm');
+            const logoutModal = document.getElementById('logoutModal');
+
+            if (logoutForm && logoutModal) {
+                logoutForm.addEventListener('submit', function(e) {
+                    console.log('Пользователь выходит из системы...');
+
+                    const modal = bootstrap.Modal.getInstance(logoutModal);
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Выход...';
+                        submitBtn.disabled = true;
+                    }
+                });
+            }
+
+            if (logoutModal) {
+                logoutModal.addEventListener('hidden.bs.modal', function () {
+                    const submitBtn = document.querySelector('#logoutForm button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Да, выйти';
+                        submitBtn.disabled = false;
+                    }
+                });
+            }
+
+            console.log('Историческая карта полностью инициализирована');
+        });
+
+        // Принудительное обновление данных каждые 5 секунд (для тестирования)
+        setInterval(() => {
+            if (window.questSystem && window.questSystem.isInitialized) {
+                console.log('🔄 Автоматическое обновление данных...');
+                window.questSystem.forceRefresh();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

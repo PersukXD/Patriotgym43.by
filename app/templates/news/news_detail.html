@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ news_item.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Хлебные крошки -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'news_list' %}">Новости</a></li>
+                    <li class="breadcrumb-item active">{{ news_item.title|truncatewords:5 }}</li>
+                </ol>
+            </nav>
+
+            <!-- Заголовок и дата -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h1 class="card-title h2 mb-3">{{ news_item.title }}</h1>
+                    <div class="d-flex align-items-center text-muted mb-3">
+                        <i class="bi bi-calendar me-2"></i>
+                        <span>{{ news_item.date }}</span>
+                        {% if news_item.author %}
+                        <span class="ms-3">
+                            <i class="bi bi-person me-2"></i>
+                            <span>{{ news_item.author }}</span>
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if news_item.tags %}
+                    <div class="tags-container mb-3">
+                        {% for tag in news_item.tags %}
+                        <span class="badge bg-primary me-1">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Главное изображение -->
+            {% if news_item.main_image %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-0">
+                    <img src="{{ news_item.main_image }}" class="img-fluid w-100"
+                         alt="{{ news_item.title }}" style="max-height: 500px; object-fit: cover;">
+                    {% if news_item.image_caption %}
+                    <div class="p-3 text-center text-muted">
+                        <small>{{ news_item.image_caption }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Текст новости -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="news-content">
+                        {{ news_item.text|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Дополнительные изображения -->
+            {% if news_item.additional_images %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-images me-2"></i>Дополнительные изображения</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for image_url in news_item.additional_images %}
+                        <div class="col-md-4 mb-3">
+                            <div class="image-container position-relative">
+                                <img src="{{ image_url }}" class="img-fluid rounded shadow-sm"
+                                     alt="Изображение {{ forloop.counter }}"
+                                     style="height: 200px; width: 100%; object-fit: cover; cursor: pointer;"
+                                     data-bs-toggle="modal" data-bs-target="#imageModal{{ forloop.counter }}">
+                            </div>
+                        </div>
+
+                        <!-- Модальное окно для изображения -->
+                        <div class="modal fade" id="imageModal{{ forloop.counter }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Изображение {{ forloop.counter }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img src="{{ image_url }}" class="img-fluid" alt="Изображение {{ forloop.counter }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Навигация между новостями -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if previous_news %}
+                            <a href="{% url 'news_detail' previous_news.id %}" class="btn btn-outline-primary w-100 text-start">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                <div>
+                                    <small>Предыдущая новость</small>
+                                    <div class="fw-bold">{{ previous_news.title|truncatewords:8 }}</div>
+                                </div>
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if next_news %}
+                            <a href="{% url 'news_detail' next_news.id %}" class="btn btn-outline-primary w-100 text-end">
+                                <div>
+                                    <small>Следующая новость</small>
+                                    <div class="fw-bold">{{ next_news.title|truncatewords:8 }}</div>
+                                </div>
+                                <i class="bi bi-arrow-right ms-2"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="text-center mt-5">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'news_list' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Назад к списку новостей
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .news-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: var(--text-primary);
+    }
+
+    .news-content p {
+        margin-bottom: 1.5rem;
+    }
+
+    .breadcrumb {
+        background-color: var(--bg-secondary);
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+
+    .breadcrumb-item a {
+        color: var(--nav-link-hover);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .breadcrumb-item a:hover {
+        color: var(--btn-primary-hover);
+    }
+
+    .breadcrumb-item.active {
+        color: var(--text-secondary);
+    }
+
+    .card {
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .card-header {
+        background-color: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .text-muted {
+        color: var(--text-secondary) !important;
+    }
+
+    .badge.bg-primary {
+        background-color: var(--btn-primary-bg) !important;
+    }
+
+    .btn-outline-primary {
+        color: var(--btn-primary-bg);
+        border-color: var(--btn-primary-bg);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--btn-primary-bg);
+        color: white;
+    }
+
+    .modal-content {
+        background-color: var(--modal-bg);
+        color: var(--modal-text);
+        border: 1px solid var(--border-color);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--bg-secondary);
+    }
+
+    .image-container:hover img {
+        transform: scale(1.02);
+        transition: transform 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+        .news-content {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .btn-group {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-group .btn {
+            border-radius: 8px !important;
+        }
+    }
+
+    @media print {
+        .theme-toggle-corner,
+        .breadcrumb,
+        .btn-group,
+        .footer,
+        header {
+            display: none !important;
+        }
+
+        .main-content {
+            padding-top: 0 !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+
+<script>
+    function shareNews() {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ news_item.title }}',
+                text: '{{ news_item.title }}',
+                url: window.location.href
+            })
+            .then(() => console.log('Успешный шаринг'))
+            .catch((error) => console.log('Ошибка шаринга', error));
+        } else {
+            // Fallback для браузеров без поддержки Web Share API
+            navigator.clipboard.writeText(window.location.href)
+                .then(() => {
+                    alert('Ссылка скопирована в буфер обмена!');
+                })
+                .catch(() => {
+                    // Старый метод для браузеров без Clipboard API
+                    const tempInput = document.createElement('input');
+                    tempInput.value = window.location.href;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    alert('Ссылка скопирована в буфер обмена!');
+                });
+        }
+    }
+
+    // Добавляем плавную прокрутку для модальных окон изображений
+    document.addEventListener('DOMContentLoaded', function() {
+        const images = document.querySelectorAll('.image-container img');
+        images.forEach((img, index) => {
+            img.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('imageModal' + (index + 1)));
+                modal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}

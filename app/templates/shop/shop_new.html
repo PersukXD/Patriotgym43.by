@@ -1,0 +1,1465 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Магазин украшений - Patriot{% endblock %}
+
+{% block content %}
+
+<style>
+/* ВСТРОЕННЫЕ СТИЛИ - ОБХОД КЭШИРОВАНИЯ */
+
+/* ПЕРЕМЕННЫЕ ДЛЯ ТЕМ */
+:root[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-card: #ffffff;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: rgba(226, 232, 240, 0.8);
+    --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --shadow-medium: 0 20px 40px rgba(0, 0, 0, 0.15);
+    --shadow-blue: 0 20px 40px rgba(59, 130, 246, 0.3);
+    --header-gradient: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    --header-text: white;
+    --header-shine: rgba(255, 255, 255, 0.1);
+    --header-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+}
+
+:root[data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: rgba(51, 65, 85, 0.8);
+    --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 20px 40px rgba(0, 0, 0, 0.4);
+    --shadow-blue: 0 20px 40px rgba(59, 130, 246, 0.2);
+    --header-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    --header-text: #f1f5f9;
+    --header-shine: rgba(255, 255, 255, 0.05);
+    --header-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* ПЛАВНЫЕ ПЕРЕХОДЫ */
+body {
+    background: var(--bg-primary);
+    min-height: 100vh;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.shop-container-v5 {
+    min-height: 100vh;
+    padding: 40px 0 20px 0;
+    background: var(--bg-primary);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ВЕРХНЯЯ ПАНЕЛЬ */
+.shop-header-v5 {
+    background: var(--header-gradient);
+    color: var(--header-text);
+    padding: 40px 30px;
+    border-radius: 20px;
+    margin-bottom: 40px;
+    box-shadow: var(--header-shadow);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.shop-header-v5::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        var(--header-shine),
+        transparent
+    );
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+.shop-header-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* БАЛАНС И ИНВЕНТАРЬ В СТРОКУ */
+.balance-inventory-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.diamond-balance-v5 {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: 700;
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+}
+
+.diamond-balance-v5 .diamond-count {
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.inventory-btn-v5 {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 24px;
+    font-weight: 700;
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+
+.inventory-btn-v5:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5);
+}
+
+/* КАРТОЧКИ ТОВАРОВ */
+.shop-item-v5 {
+    border: none;
+    border-radius: 20px;
+    background: var(--bg-card);
+    box-shadow:
+        var(--shadow-light),
+        0 2px 8px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+
+.shop-item-v5::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
+    background-size: 200% 100%;
+    animation: gradientShift 2s infinite;
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.shop-item-v5:hover {
+    transform: translateY(-10px) scale(1.03);
+    box-shadow:
+        var(--shadow-blue),
+        var(--shadow-medium);
+}
+
+@keyframes cardAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+    }
+    70% {
+        transform: translateY(-5px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.shop-item-v5 {
+    animation: cardAppear 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.item-image-container-v5 {
+    height: 180px;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--border-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.item-image-v5 {
+    max-height: 140px;
+    max-width: 140px;
+    object-fit: contain;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.shop-item-v5:hover .item-image-v5 {
+    transform: scale(1.1) rotate(2deg);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+}
+
+/* КРАСИВЫЕ СТИЛИ ДЛЯ РЕДКОСТЕЙ В МАГАЗИНЕ */
+.rarity-badge-v5 {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    color: white;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+.rarity-common-v5 {
+    background: linear-gradient(135deg, #6B7280, #9ca3af);
+    font-weight: 700;
+}
+
+.rarity-rare-v5 {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    font-weight: 700;
+    box-shadow:
+        0 4px 12px rgba(59, 130, 246, 0.4),
+        0 0 10px rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.rarity-rare-v5::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+
+.rarity-epic-v5 {
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa, #8b5cf6);
+    background-size: 200% 200%;
+    font-weight: 700;
+    box-shadow:
+        0 4px 15px rgba(139, 92, 246, 0.5),
+        0 0 15px rgba(139, 92, 246, 0.3);
+    border: 1px solid rgba(255,255,255,0.4);
+    animation: gradientShift 3s ease infinite, glowPulse 2s ease-in-out infinite;
+}
+
+.rarity-epic-v5::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(45deg);
+    animation: shine 2s infinite;
+}
+
+.rarity-legendary-v5 {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+    background-size: 200% 200%;
+    font-weight: 800;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    box-shadow:
+        0 4px 18px rgba(245, 158, 11, 0.6),
+        0 0 20px rgba(245, 158, 11, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+    animation: gradientShift 2s ease infinite, legendaryGlow 1.5s ease-in-out infinite;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rarity-legendary-v5::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    animation: shineFast 1.5s infinite;
+}
+
+/* Анимации для редкостей */
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow:
+            0 4px 15px rgba(139, 92, 246, 0.5),
+            0 0 15px rgba(139, 92, 246, 0.3);
+    }
+    50% {
+        box-shadow:
+            0 4px 20px rgba(139, 92, 246, 0.7),
+            0 0 25px rgba(139, 92, 246, 0.5);
+    }
+}
+
+@keyframes legendaryGlow {
+    0%, 100% {
+        box-shadow:
+            0 4px 18px rgba(245, 158, 11, 0.6),
+            0 0 20px rgba(245, 158, 11, 0.4),
+            inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    50% {
+        box-shadow:
+            0 4px 25px rgba(245, 158, 11, 0.8),
+            0 0 30px rgba(245, 158, 11, 0.6),
+            inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+}
+
+@keyframes shineFast {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+/* Эффекты при наведении на карточки */
+.shop-item-v5:hover .rarity-badge-v5 {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.shop-item-v5:hover .rarity-common-v5 {
+    box-shadow: 0 6px 20px rgba(107, 114, 128, 0.5);
+}
+
+.shop-item-v5:hover .rarity-rare-v5 {
+    box-shadow:
+        0 6px 20px rgba(59, 130, 246, 0.5),
+        0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+.shop-item-v5:hover .rarity-epic-v5 {
+    box-shadow:
+        0 6px 22px rgba(139, 92, 246, 0.6),
+        0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.shop-item-v5:hover .rarity-legendary-v5 {
+    box-shadow:
+        0 6px 25px rgba(245, 158, 11, 0.7),
+        0 0 25px rgba(245, 158, 11, 0.5);
+}
+
+.price-tag-v5 {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.card-body-v5 {
+    padding: 1.5rem !important;
+}
+
+.item-info-v5 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.item-name-v5 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.buy-btn-v5 {
+    background: linear-gradient(135deg, #3b82f6, #1e40af) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 20px !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.buy-btn-v5::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.buy-btn-v5:hover::before {
+    left: 100%;
+}
+
+.buy-btn-v5:hover {
+    background: linear-gradient(135deg, #1e40af, #1e3a8a) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5) !important;
+}
+
+.owned-badge-v5 {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 20px !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+}
+
+.insufficient-diamonds-v5 {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 10px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.category-section-v5 {
+    margin-bottom: 40px;
+}
+
+.category-title-v5 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #3b82f6;
+    display: inline-block;
+}
+
+.items-count-v5 {
+    background: #3b82f6;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    margin-left: 10px;
+}
+
+/* СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ИНВЕНТАРЯ */
+.inventory-modal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.inventory-modal .modal-header {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border-bottom: none;
+    padding: 25px 30px;
+    position: relative;
+}
+
+.inventory-modal .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: modalShine 3s infinite;
+}
+
+@keyframes modalShine {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.inventory-modal .modal-title {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.inventory-modal .modal-body {
+    padding: 30px;
+    max-height: 60vh;
+    overflow-y: auto;
+    background: var(--bg-primary);
+}
+
+.inventory-item {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: var(--shadow-light);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.inventory-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-medium);
+}
+
+.inventory-item-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    padding: 8px;
+}
+
+.inventory-item-info {
+    flex: 1;
+}
+
+.inventory-item-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.inventory-item-category {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+/* КРАСИВЫЕ СТИЛИ ДЛЯ РЕДКОСТЕЙ В ИНВЕНТАРЕ */
+.inventory-item-rarity {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 8px;
+    color: white;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.rarity-common {
+    color: #ffffff;
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    font-weight: 700;
+}
+
+.rarity-rare {
+    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    font-weight: 700;
+    box-shadow:
+        0 2px 8px rgba(59, 130, 246, 0.4),
+        0 0 10px rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.rarity-rare::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+
+.rarity-epic {
+    color: #ffffff;
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa, #8b5cf6);
+    background-size: 200% 200%;
+    font-weight: 700;
+    box-shadow:
+        0 2px 12px rgba(139, 92, 246, 0.5),
+        0 0 15px rgba(139, 92, 246, 0.3);
+    border: 1px solid rgba(255,255,255,0.4);
+    animation: gradientShift 3s ease infinite, glowPulse 2s ease-in-out infinite;
+}
+
+.rarity-epic::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(45deg);
+    animation: shine 2s infinite;
+}
+
+.rarity-legendary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+    background-size: 200% 200%;
+    font-weight: 800;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    box-shadow:
+        0 2px 15px rgba(245, 158, 11, 0.6),
+        0 0 20px rgba(245, 158, 11, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+    animation: gradientShift 2s ease infinite, legendaryGlow 1.5s ease-in-out infinite;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rarity-legendary::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(45deg);
+    animation: shineFast 1.5s infinite;
+}
+
+/* Эффекты при наведении на предметы инвентаря */
+.inventory-item:hover .inventory-item-rarity {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.inventory-item:hover .rarity-common {
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.5);
+}
+
+.inventory-item:hover .rarity-rare {
+    box-shadow:
+        0 4px 15px rgba(59, 130, 246, 0.5),
+        0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+.inventory-item:hover .rarity-epic {
+    box-shadow:
+        0 4px 18px rgba(139, 92, 246, 0.6),
+        0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.inventory-item:hover .rarity-legendary {
+    box-shadow:
+        0 4px 20px rgba(245, 158, 11, 0.7),
+        0 0 25px rgba(245, 158, 11, 0.5);
+}
+
+.equip-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.equip-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.unequip-btn {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.unequip-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.equipped-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.empty-inventory {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-inventory i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+/* УВЕДОМЛЕНИЯ */
+.notification-container-v5 {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 320px;
+}
+
+.alert-v5 {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.5s ease;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* АДАПТИВНОСТЬ */
+@media (max-width: 768px) {
+    .shop-container-v5 {
+        padding: 30px 0 20px 0;
+    }
+
+    .shop-header-v5 {
+        padding: 30px 20px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .balance-inventory-row {
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .diamond-balance-v5,
+    .inventory-btn-v5 {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+
+    .item-image-container-v5 {
+        height: 160px;
+    }
+
+    .item-image-v5 {
+        max-height: 120px;
+        max-width: 120px;
+    }
+
+    .inventory-modal .modal-body {
+        padding: 20px;
+    }
+
+    .inventory-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .inventory-item-rarity,
+    .rarity-badge-v5 {
+        font-size: 0.7rem;
+        padding: 3px 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .balance-inventory-row {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .diamond-balance-v5,
+    .inventory-btn-v5 {
+        width: 100%;
+        max-width: 250px;
+        justify-content: center;
+    }
+}
+
+/* СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ПОДТВЕРЖДЕНИЯ */
+.unequip-confirm-modal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.unequip-confirm-modal .modal-header {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border-bottom: none;
+    padding: 25px 30px;
+    position: relative;
+}
+
+.unequip-confirm-modal .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: modalShine 3s infinite;
+}
+
+.unequip-confirm-modal .modal-body {
+    padding: 30px;
+    text-align: center;
+    background: var(--bg-primary);
+}
+
+.unequip-confirm-modal .modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 20px 30px;
+    background: var(--bg-card);
+}
+
+.unequip-confirm-modal .btn-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.unequip-confirm-modal .btn-warning:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+}
+
+.unequip-confirm-modal .btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.unequip-confirm-modal .btn-secondary:hover {
+    background: var(--border-color);
+    transform: translateY(-2px);
+}
+</style>
+
+<!-- УДАЛЯЕМ КНОПКУ ПЕРЕКЛЮЧЕНИЯ ТЕМЫ - ОНА УЖЕ ЕСТЬ В BASE.HTML -->
+
+<div class="container shop-container-v5">
+    <div class="row">
+        <div class="col-12">
+            <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+            <div class="shop-header-v5" id="shopHeaderV5">
+                <div class="shop-header-content">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h1 class="h2 mb-3 fw-bold">✨ МАГАЗИН УКРАШЕНИЙ</h1>
+                            <p class="mb-0 opacity-90 fs-5">Эксклюзивные рамки аватаров и украшения для персонализации вашего профиля</p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <!-- БАЛАНС И ИНВЕНТАРЬ В СТРОКУ -->
+                            <div class="balance-inventory-row justify-content-md-end">
+                                <div class="diamond-balance-v5">
+                                    <i class="bi bi-gem"></i>
+                                    <span class="diamond-count" id="diamondCount">{{ user_diamonds }}</span>
+                                    <span>алмазов</span>
+                                </div>
+                                <button class="btn inventory-btn-v5" id="inventoryBtnV5">
+                                    <i class="bi bi-bag"></i>
+                                    <span>Мой инвентарь</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- КАТЕГОРИИ ТОВАРОВ -->
+            {% for category, items in categories.items %}
+            <div class="category-section-v5">
+                <h3 class="category-title-v5">
+                    {{ items.0.get_category_display }}
+                    <span class="items-count-v5">{{ items|length }} предметов</span>
+                </h3>
+
+                <div class="row g-4">
+                    {% for item in items %}
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                        <div class="card shop-item-v5 h-100" style="animation-delay: {{ forloop.counter0|add:1 }}00ms">
+                            <div class="item-image-container-v5">
+                                {% if item.get_image_url %}
+                                    <img src="{{ item.get_image_url }}"
+                                         class="item-image-v5"
+                                         alt="{{ item.name }}"
+                                         onerror="this.style.display='none'">
+                                {% else %}
+                                    <div class="text-muted">Нет изображения</div>
+                                {% endif %}
+                                <span class="rarity-badge-v5 rarity-{{ item.rarity }}-v5">
+                                    {{ item.get_rarity_display }}
+                                </span>
+                            </div>
+
+                            <div class="card-body card-body-v5 d-flex flex-column">
+                                <div class="item-info-v5">
+                                    <div class="item-name-v5">{{ item.name }}</div>
+                                    <div class="price-tag-v5">
+                                        <i class="bi bi-gem small"></i>
+                                        <span>{{ item.price }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-auto">
+                                    {% if item.id in user_inventory %}
+                                    <button class="btn owned-badge-v5" disabled>
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        В вашем инвентаре
+                                    </button>
+                                    {% else %}
+                                    <button class="btn buy-btn-v5"
+                                            data-item-id="{{ item.id }}"
+                                            data-item-name="{{ item.name }}"
+                                            data-item-price="{{ item.price }}"
+                                            {% if user_diamonds < item.price %}disabled{% endif %}>
+                                        <i class="bi bi-cart3 me-2"></i>
+                                        Купить сейчас
+                                    </button>
+                                    {% endif %}
+
+                                    {% if user_diamonds < item.price and item.id not in user_inventory %}
+                                    <div class="insufficient-diamonds-v5">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Недостаточно алмазов
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5">
+                <i class="bi bi-shop display-1 text-muted mb-3"></i>
+                <h3 class="text-muted mb-2">Магазин пока пуст</h3>
+                <p class="text-muted mb-4">Скоро здесь появятся эксклюзивные товары!</p>
+                <button class="btn btn-primary btn-lg" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    Обновить страницу
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ПОКУПКИ -->
+<div class="modal fade" id="buyModalV5" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-cart-check me-2"></i>
+                    Подтверждение покупки
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-gem text-warning fs-1"></i>
+                </div>
+                <h6>Вы уверены, что хотите купить этот товар?</h6>
+                <h5 class="text-primary fw-bold my-3" id="itemNameV5"></h5>
+
+                <div class="bg-light p-3 rounded mb-3">
+                    <div class="row text-center">
+                        <div class="col-6 border-end">
+                            <small class="text-muted d-block">Стоимость</small>
+                            <strong class="text-danger fs-5" id="itemPriceV5">0</strong>
+                            <small class="text-muted d-block">алмазов</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Баланс после</small>
+                            <strong class="text-success fs-5" id="newBalanceV5">0</strong>
+                            <small class="text-muted d-block">алмазов</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Товар будет немедленно добавлен в ваш инвентарь
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Отмена
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmBuyV5">
+                    <i class="bi bi-coin me-1"></i>
+                    Подтвердить покупку
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ИНВЕНТАРЯ -->
+<div class="modal fade inventory-modal" id="inventoryModal" tabindex="-1" aria-labelledby="inventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6, #1e40af);">
+                <h5 class="modal-title" id="inventoryModalLabel">
+                    <i class="bi bi-bag me-2"></i>
+                    Мой инвентарь
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="inventoryContent">
+                    <!-- Контент инвентаря будет загружен здесь -->
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        <p class="mt-2">Загрузка инвентаря...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ДОБАВЬТЕ ЭТО МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+<div class="modal fade unequip-confirm-modal" id="unequipConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Снять украшение?
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <i class="bi bi-question-circle text-warning fs-1"></i>
+                </div>
+                <h6>Вы уверены, что хотите снять это украшение?</h6>
+                <h5 class="text-warning fw-bold my-3" id="unequipItemName">Название предмета</h5>
+
+                <div class="alert alert-warning small mt-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    После снятия украшение останется в вашем инвентаре
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Отмена
+                </button>
+                <button type="button" class="btn btn-warning" id="confirmUnequipBtn">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Да, снять
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- КОНТЕЙНЕР ДЛЯ УВЕДОМЛЕНИЙ -->
+<div id="notificationContainerV5" class="notification-container-v5"></div>
+
+<script>
+// ВСТРОЕННЫЙ JAVASCRIPT
+console.log('🛍️ МАГАЗИН V5 ЗАПУЩЕН!');
+
+// УДАЛЯЕМ КЛАСС ThemeManagerV5 - ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩИЙ ИЗ BASE.HTML
+
+// Функция для показа уведомлений
+function showNotificationV5(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' :
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    const icon = type === 'success' ? 'bi-check-circle-fill' :
+                type === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill';
+
+    const alertId = 'alert-' + Date.now();
+    const alert = document.createElement('div');
+    alert.id = alertId;
+    alert.className = `alert ${alertClass} alert-v5 alert-dismissible fade show`;
+    alert.innerHTML = `
+        <i class="bi ${icon} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    const container = document.getElementById('notificationContainerV5');
+    container.appendChild(alert);
+
+    setTimeout(() => {
+        if (document.getElementById(alertId)) {
+            const bsAlert = new bootstrap.Alert(document.getElementById(alertId));
+            bsAlert.close();
+        }
+    }, 4000);
+}
+
+// Функция для загрузки инвентаря
+function loadInventory() {
+    const inventoryContent = document.getElementById('inventoryContent');
+
+    fetch('/inventory/?cache_buster=' + Date.now(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then(html => {
+        inventoryContent.innerHTML = html;
+    })
+    .catch(error => {
+        console.error('Ошибка загрузки инвентаря:', error);
+        inventoryContent.innerHTML = `
+            <div class="empty-inventory">
+                <i class="bi bi-exclamation-triangle"></i>
+                <h5>Ошибка загрузки инвентаря</h5>
+                <p>Попробуйте обновить страницу</p>
+            </div>
+        `;
+    });
+}
+
+// Обработчик открытия модального окна инвентаря
+document.getElementById('inventoryModal').addEventListener('show.bs.modal', function () {
+    loadInventory();
+});
+
+// Обработчик для кнопки инвентаря
+document.getElementById('inventoryBtnV5').addEventListener('click', function() {
+    const inventoryModal = new bootstrap.Modal(document.getElementById('inventoryModal'));
+    inventoryModal.show();
+});
+
+// Обработка клика на кнопку покупки
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.buy-btn-v5:not(:disabled)')) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const button = e.target.closest('.buy-btn-v5');
+        const itemId = button.getAttribute('data-item-id');
+        const itemName = button.getAttribute('data-item-name');
+        const itemPrice = parseInt(button.getAttribute('data-item-price'));
+        const currentBalance = parseInt(document.getElementById('diamondCount').textContent);
+        const newBalance = currentBalance - itemPrice;
+
+        document.getElementById('itemNameV5').textContent = itemName;
+        document.getElementById('itemPriceV5').textContent = itemPrice;
+        document.getElementById('newBalanceV5').textContent = newBalance;
+
+        const modal = new bootstrap.Modal(document.getElementById('buyModalV5'));
+        modal.show();
+
+        document.getElementById('buyModalV5').setAttribute('data-item-id', itemId);
+    }
+});
+
+// Подтверждение покупки
+document.getElementById('confirmBuyV5').addEventListener('click', function() {
+    const itemId = document.getElementById('buyModalV5').getAttribute('data-item-id');
+    if (!itemId) {
+        showNotificationV5('error', 'Ошибка: товар не выбран');
+        return;
+    }
+
+    const button = this;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass me-1"></i>Покупка...';
+
+    fetch(`/api/buy-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('buyModalV5'));
+            modal.hide();
+
+            showNotificationV5('success', `🎉 "${data.item_name}" успешно куплен!`);
+
+            document.getElementById('diamondCount').textContent = data.new_balance;
+
+            const buyButton = document.querySelector(`.buy-btn-v5[data-item-id="${itemId}"]`);
+            if (buyButton) {
+                buyButton.outerHTML = `
+                    <button class="btn owned-badge-v5" disabled>
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        В вашем инвентаре
+                    </button>
+                `;
+            }
+
+            // Обновляем состояние других кнопок покупки
+            document.querySelectorAll('.buy-btn-v5').forEach(btn => {
+                const price = parseInt(btn.getAttribute('data-item-price'));
+                if (data.new_balance < price) {
+                    btn.disabled = true;
+                }
+            });
+        } else {
+            showNotificationV5('error', data.error || 'Ошибка при покупке');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showNotificationV5('error', 'Ошибка при покупке');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+        document.getElementById('buyModalV5').removeAttribute('data-item-id');
+    });
+});
+
+// Функции для работы с инвентарем - С КАСТОМНЫМ ПОДТВЕРЖДЕНИЕМ
+function equipItem(itemId) {
+    console.log('Надевание предмета:', itemId);
+
+    fetch(`/api/equip-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Network response was not ok');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showNotificationV5('success', `🎉 "${data.item_name}" теперь активно!`);
+
+            // Закрываем модальное окно инвентаря
+            const inventoryModal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+            if (inventoryModal) {
+                inventoryModal.hide();
+            }
+
+            // Обновляем инвентарь без перезагрузки страницы
+            setTimeout(() => {
+                loadInventory();
+            }, 500);
+        } else {
+            showNotificationV5('error', data.error || 'Ошибка при надевании предмета');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotificationV5('error', 'Ошибка при надевании предмета: ' + error.message);
+    });
+}
+
+function unequipItem(itemId, itemName = 'это украшение') {
+    // Показываем кастомное модальное окно вместо браузерного confirm
+    showUnequipConfirmModal(itemId, itemName);
+}
+
+// Функция для показа кастомного модального окна подтверждения
+function showUnequipConfirmModal(itemId, itemName) {
+    // Устанавливаем название предмета
+    document.getElementById('unequipItemName').textContent = itemName;
+
+    // Показываем модальное окно
+    const modal = new bootstrap.Modal(document.getElementById('unequipConfirmModal'));
+    modal.show();
+
+    // Обработчик подтверждения снятия
+    const confirmBtn = document.getElementById('confirmUnequipBtn');
+
+    // Удаляем старые обработчики
+    confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+    const newConfirmBtn = document.getElementById('confirmUnequipBtn');
+
+    // Добавляем новый обработчик
+    newConfirmBtn.addEventListener('click', function() {
+        modal.hide();
+        performUnequip(itemId);
+    });
+}
+
+// Функция для выполнения снятия предмета
+function performUnequip(itemId) {
+    console.log('Снятие предмета:', itemId);
+
+    fetch(`/api/unequip-item/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Network response was not ok');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showNotificationV5('success', `📦 "${data.item_name}" снято!`);
+
+            // Закрываем модальное окно инвентаря
+            const inventoryModal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+            if (inventoryModal) {
+                inventoryModal.hide();
+            }
+
+            // Обновляем инвентарь без перезагрузки страницы
+            setTimeout(() => {
+                loadInventory();
+            }, 500);
+        } else {
+            showNotificationV5('error', data.error || 'Ошибка при снятии предмета');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotificationV5('error', 'Ошибка при снятии предмета: ' + error.message);
+    });
+}
+
+// Функции для работы с инвентарем
+
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔥 Магазин V5 полностью загружен!');
+});
+</script>
+{% endblock %}
